@@ -29,9 +29,7 @@ Turn your list field columns into repeatable number fields
 
 Simply install and activate the plugin - no configuration required.
 
-Open your Gravity Form, and either add the 'Ajax Upload' field to your form, or a 'List' field and use the tick boxes to make a column an upload field.
-
-To configure the plugin, go to the Gravity Forms -> Settings -> Ajax Upload menu.
+Open your Gravity Form, edit a 'List' field and use the 'Number Format' options to configure the columns.
 
 **Have a suggestion, comment or request?**
 
