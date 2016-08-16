@@ -2,7 +2,7 @@
 /*
 Plugin Name: List Field Number Format for Gravity Forms
 Description: Turn your list field columns into repeatable number fields
-Version: 1.0.0
+Version: 1.0.1
 Author: Adrian Gordon
 Author URI: http://www.itsupportguides.com
 License: GPL2
@@ -33,7 +33,7 @@ if ( class_exists( 'GFForms' ) ) {
 
     class ITSG_GF_ListField_Number_Format extends GFAddOn {
 
-        protected $_version = '1.0';
+        protected $_version = '1.0.1';
         protected $_min_gravityforms_version = '1.9.9.8';
         protected $_slug = 'list-field-number-format-for-gravity-forms';
         protected $_full_path = __FILE__;
@@ -185,21 +185,21 @@ if ( class_exists( 'GFForms' ) ) {
 					<div id="list_number_options" style="display:none; background: rgb(244, 244, 244) none repeat scroll 0px 0px; padding: 10px; border-bottom: 1px solid grey; margin-top: 10px;" >
 						<div style="clear: both;">
 						<label for="list_choice_number_format_single" class="section_label">
-						<? _e( 'Number Format', 'list-field-number-format-for-gravity-forms' ) ?>
+						<?php _e( 'Number Format', 'list-field-number-format-for-gravity-forms' ); ?>
 						</label>
 						</div>
-						<select style="margin-bottom: 10px;" onchange="SetFieldProperty( 'isNumberFormat', this.value);" id="list_choice_number_format_single" >
+						<select style="margin-bottom: 10px;" onchange="SetFieldProperty( 'isNumberFormat', this.value);itsg_gf_list_numformat_displayed_options( 'single' )" id="list_choice_number_format_single" >
 						<option value="decimal_dot">9,999.99</option>
 						<option value="decimal_comma">9.999,99</option>
-						<option value="currency"><? _e( 'Currency', 'list-field-number-format-for-gravity-forms' ) ?></option>
+						<option value="currency"><?php _e( 'Currency', 'list-field-number-format-for-gravity-forms' ); ?></option>
 						</select>
 						<div style="clear: both;">
 						<label for="list_choice_number_rounding_single" class="section_label">
-						<? _e( 'Rounding', 'list-field-number-format-for-gravity-forms' ) ?>
+						<?php _e( 'Rounding', 'list-field-number-format-for-gravity-forms' ); ?>
 						</label>
 						</div>
 						<select style="margin-bottom: 10px;" onchange="SetFieldProperty( 'isNumberRounding', this.value);" id="list_choice_number_rounding_single" >
-						<option value="norounding"><? _e( 'Do not round', 'list-field-number-format-for-gravity-forms' ) ?></option>
+						<option value="norounding"><?php _e( 'Do not round', 'list-field-number-format-for-gravity-forms' ); ?></option>
 						<option value="0">0</option>
 						<option value="1">1</option>
 						<option value="2">2</option>
@@ -210,35 +210,35 @@ if ( class_exists( 'GFForms' ) ) {
 						<br>
 						<input type="checkbox" id="list_choice_number_fixed_point_single" onclick="SetFieldProperty( 'isNumberFixedPoint', this.checked );" >
 						<label for="list_choice_number_fixed_point_single" class="inline">
-						<? _e( 'Fixed point notation', 'list-field-number-format-for-gravity-forms' ) ?>
+						<?php _e( 'Fixed point notation', 'list-field-number-format-for-gravity-forms' ); ?>
 						</label>
 						<br><br>
 						<div style="clear: both;">
 						<label for="list_choice_number_rounding_single_direction" class="section_label">
-						<? _e( 'Rounding Direction', 'list-field-number-format-for-gravity-forms' ) ?>
+						<?php _e( 'Rounding Direction', 'list-field-number-format-for-gravity-forms' ); ?>
 						</label>
 						</div>
 						<select style="margin-bottom: 10px;" onchange="SetFieldProperty( 'isNumberRoundingDirection', this.value);" id="list_choice_number_rounding_single_direction" >
-						<option value="roundclosest"><? _e( 'Round closest', 'list-field-number-format-for-gravity-forms' ) ?></option>
-						<option value="roundup"><? _e( 'Round up', 'list-field-number-format-for-gravity-forms' ) ?></option>
-						<option value="rounddown"><? _e( 'Round down', 'list-field-number-format-for-gravity-forms' ) ?></option>
+						<option value="roundclosest"><?php _e( 'Round closest', 'list-field-number-format-for-gravity-forms' ); ?></option>
+						<option value="roundup"><?php _e( 'Round up', 'list-field-number-format-for-gravity-forms' ); ?></option>
+						<option value="rounddown"><?php _e( 'Round down', 'list-field-number-format-for-gravity-forms' ); ?></option>
 						</select>
 						<br>
 						<div style="clear: both;">
 						<label class="section_label">
-						<? _e( 'Round', 'list-field-number-format-for-gravity-forms' ) ?>
+						<?php _e( 'Round', 'list-field-number-format-for-gravity-forms' ); ?>
 						</label>
 						</div>
 						<div class="range_min">
 						<input type="text" onchange="SetFieldProperty( 'isNumberRangeMin', this.value);" id="list_choice_number_range_min_single" >
 						<label for="list_choice_number_range_min_single">
-						<? _e( 'Min', 'list-field-number-format-for-gravity-forms' ) ?>
+						<?php _e( 'Min', 'list-field-number-format-for-gravity-forms' ); ?>
 						</label>
 						</div>
 						<div class="range_max">
 						<input type="text" onchange="SetFieldProperty( 'isNumberRangeMax', this.value);" id="list_choice_number_range_max_single" >
 						<label for="list_choice_number_range_max_single">
-						<? _e( 'Max', 'list-field-number-format-for-gravity-forms' ) ?>
+						<?php _e( 'Max', 'list-field-number-format-for-gravity-forms' ); ?>
 						</label>
 						</div>
 						<br>
@@ -534,7 +534,7 @@ if ( class_exists( 'GFForms' ) ) {
 									return true;
 								}
 							}
-						} else if ( true == $field->list_choice_number ) {
+						} else if ( true == $field->isNumber ) {
 							return true;
 						}
 					}
