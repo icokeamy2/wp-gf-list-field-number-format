@@ -21,7 +21,7 @@ Turn your list field columns into repeatable number fields
 * specify the rounding type - round up, round down or round closest
 * specify the decimal places to round to
 * force the number to use fixed placed notation, e.g. 10.1 would become 10.10 with 2 place fixed notation
-* compatibable with <a href="https://github.com/richardW8k/RWListFieldCalculations/blob/master/RWListFieldCalculations.php">Gravity Forms List Field Calculations Add-On</a>
+* compatible with <a href="https://github.com/richardW8k/RWListFieldCalculations/blob/master/RWListFieldCalculations.php">Gravity Forms List Field Calculations Add-On</a>
 
 > See a demo of this plugin at [demo.itsupportguides.com/list-field-number-format-for-gravity-forms/](http://demo.itsupportguides.com/list-field-number-format-for-gravity-forms/ "demo website")
 
