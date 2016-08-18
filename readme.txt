@@ -16,7 +16,7 @@ Turn your list field columns into repeatable number fields
 
 **What does this plugin do?**
 
-* make a list field number accept only numbers
+* make a list field column accept only numbers
 * specify the format of the number including currency
 * specify the rounding type - round up, round down or round closest
 * specify the decimal places to round to
