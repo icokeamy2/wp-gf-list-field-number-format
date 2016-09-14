@@ -3,7 +3,7 @@ Contributors: ovann86
 Donate link: http://www.itsupportguides.com/
 Tags: Gravity Forms, forms, online forms, select, list
 Requires at least: 4.5.3
-Tested up to: 4.6.0
+Tested up to: 4.6.1
 Stable tag: 1.1.0
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
