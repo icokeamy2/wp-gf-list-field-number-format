@@ -8,10 +8,17 @@ var text_rounding = itsg_gf_listnumformat_admin_js_settings.text_rounding;
 var text_range = itsg_gf_listnumformat_admin_js_settings.text_range;
 var text_min = itsg_gf_listnumformat_admin_js_settings.text_min;
 var text_max = itsg_gf_listnumformat_admin_js_settings.text_max;
+var text_enable_range_instructions = itsg_gf_listnumformat_admin_js_settings.text_enable_range_instructions;
 var text_format_currency = itsg_gf_listnumformat_admin_js_settings.text_format_currency;
 var text_format_decimal_dot = itsg_gf_listnumformat_admin_js_settings.text_format_decimal_dot;
 var text_format_decimal_comma = itsg_gf_listnumformat_admin_js_settings.text_format_decimal_comma;
 var text_fixed_point = itsg_gf_listnumformat_admin_js_settings.text_fixed_point;
+var text_enable_calculation = itsg_gf_listnumformat_admin_js_settings.text_enable_calculation;
+var text_enable_range_calculation = itsg_gf_listnumformat_admin_js_settings.text_enable_range_calculation;
+var text_enable_column_total = itsg_gf_listnumformat_admin_js_settings.text_enable_column_total;
+var text_min_formula = itsg_gf_listnumformat_admin_js_settings.text_min_formula;
+var text_max_formula = itsg_gf_listnumformat_admin_js_settings.text_max_formula;
+var text_column_row_value = itsg_gf_listnumformat_admin_js_settings.text_column_row_value;
 
 // ADD drop down options to list field in form editor - hooks into existing GetFieldChoices function.
 (function (w){
@@ -28,6 +35,8 @@ var text_fixed_point = itsg_gf_listnumformat_admin_js_settings.text_fixed_point;
 			var inputType = GetInputType( field );
 			var isNumber = field.choices[ index ].isNumber ? 'checked' : '';
 			var isNumberFixedPoint = field.choices[ index ].isNumberFixedPoint ? 'checked' : '';
+			var isNumberRangeInstructions = 'undefined' == typeof field.choices[ index ].isNumberRangeInstructions || field.choices[ index ].isNumberRangeInstructions ? 'checked' : '';
+			var isNumberColumnTotal = field.choices[ index ].isNumberColumnTotal ? 'checked' : '';
 
 			var value = field.enableChoiceValue ? String( field.choices[ index ].value ) : field.choices[ index ].text;
 			if ( 'list' == inputType ){
@@ -69,9 +78,9 @@ var text_fixed_point = itsg_gf_listnumformat_admin_js_settings.text_fixed_point;
 				str += "<option value='4'>4</option>";
 				str += "<option value='5'>5</option>";
 				str += "</select>";
-				str += "<br>";
 
 				// option for fixed point notation
+				str += "<br>";
 				str += "<input type='checkbox' id='list_choice_number_fixed_point_" + index + "' " + isNumberFixedPoint + " onclick='SetFieldChoiceNumFormat( " + index + " );' /> ";
 				str += "<label class='inline' for='list_choice_number_fixed_point_" + index + "'>" + text_fixed_point + "</label>";
 				str += "<br>";
@@ -96,6 +105,7 @@ var text_fixed_point = itsg_gf_listnumformat_admin_js_settings.text_fixed_point;
 				str += "</div>";
 
 				// option for min range
+				str += "<div class='range'>";
 				str += "<div class='range_min'>";
 				str += "<input type='text' id='list_choice_number_range_min_" + index + "' onchange='SetFieldChoiceNumFormat( " + index + " );' >";
 				str += "<label for='list_choice_number_range_min_" + index + "'>";
@@ -108,6 +118,20 @@ var text_fixed_point = itsg_gf_listnumformat_admin_js_settings.text_fixed_point;
 				str += "<label for='list_choice_number_range_max_" + index + "'>";
 				str +=  text_max + "</label>";
 				str += "</div>";
+				str += "<br>";
+				str += "</div>";
+
+				// option to include range message - enabled by default
+				str += "<br>";
+				str += "<input type='checkbox' id='list_choice_number_range_instructions_" + index + "' " + isNumberRangeInstructions + " onclick='SetFieldChoiceNumFormat( " + index + " );' >";
+				str += "<label type='checkbox' class='inline' for='list_choice_number_range_instructions_" + index + "'>" + text_enable_range_instructions + "</label>";
+				str += "<br>";
+
+				// option to create column total
+				str += "<br>";
+				str += "<input type='checkbox' id='list_choice_number_column_total_" + index + "' " + isNumberColumnTotal + " onclick='SetFieldChoiceNumFormat( " + index + " );' >";
+				str += "<label type='checkbox' class='inline' for='list_choice_number_column_total_" + index + "'>" + text_enable_column_total + "</label>";
+				str += "<br>";
 
 				str += "</div>";
 				str += "</div>";
@@ -129,6 +153,10 @@ function SetFieldChoiceNumFormat( index ) {
 	var isNumberRoundingDirection = jQuery( '#list_choice_number_rounding_direction_' + index ).val();
 	var isNumberRangeMin = jQuery( '#list_choice_number_range_min_' + index ).val();
 	var isNumberRangeMax = jQuery( '#list_choice_number_range_max_' + index ).val();
+	var isNumberRangeInstructions = jQuery( '#list_choice_number_range_instructions_' + index ).is( ':checked' );
+	var isNumberEnableCalculation = jQuery( '#list_choice_number_enable_calculation_' + index ).is( ':checked' );
+	var isNumberEnableRangeCalculation = jQuery( '#list_choice_number_enable_range_calculation_' + index ).is( ':checked' );
+	var isNumberColumnTotal = jQuery( '#list_choice_number_column_total_' + index ).is( ':checked' );
 
 	field = GetSelectedField();
 
@@ -140,6 +168,14 @@ function SetFieldChoiceNumFormat( index ) {
 	field.choices[ index ].isNumberRoundingDirection = isNumberRoundingDirection;
 	field.choices[ index ].isNumberRangeMin = isNumberRangeMin;
 	field.choices[ index ].isNumberRangeMax = isNumberRangeMax;
+	field.choices[ index ].isNumberRangeInstructions = isNumberRangeInstructions;
+	field.choices[ index ].isNumberEnableCalculation = isNumberEnableCalculation;
+	field.choices[ index ].isNumberColumnTotal = isNumberColumnTotal;
+	field.choices[ index ].isNumberEnableRangeCalculation = isNumberEnableRangeCalculation;
+
+	jQuery( '#list_choice_range_min_calculation_formula_' + index ).val( isNumberRangeMin );
+
+	jQuery( '#list_choice_range_max_calculation_formula_' + index ).val( isNumberRangeMax );
 
 	LoadBulkChoices( field );
 
@@ -174,9 +210,42 @@ function itsg_gf_list_numformat_format_preview() {
 function itsg_gf_list_numformat_displayed_options( index ) {
 
 	var rounding_select = jQuery( '#list_choice_number_rounding_' + index );
+	var rounding_select_label = jQuery( 'label[for="list_choice_number_rounding_' + index + '"]' );
+	var rounding_direction_select = jQuery( '#list_choice_number_rounding_direction_' + index );
+	var rounding_direction_select_label = jQuery( 'label[for="list_choice_number_rounding_direction_' + index + '"]' );
 	var fixed_poiont_label = jQuery( 'label[for="list_choice_number_fixed_point_' + index + '"]' );
 	var fixed_poiont_input = jQuery( '#list_choice_number_fixed_point_' + index );
 	var isNumberFormat = jQuery( '#list_choice_number_format_' + index ).val();
+	var isNumberCalculationFormula = jQuery( '#list_choice_number_format_' + index ).val();
+	var rounding_selected_option = rounding_select.find( 'option:selected' ).val();
+	var isNumberEnableCalculation = jQuery( '#list_choice_number_enable_calculation_' + index ).prop( 'checked' );
+	var isNumberEnableRangeCalculation = jQuery( '#list_choice_number_enable_range_calculation_' + index ).prop( 'checked' );
+
+	if ( isNumberEnableCalculation ) {
+		jQuery( '.list_choice_number_options_' + index + ' #calculation_options_' + index ).show();
+	} else {
+		jQuery( '.list_choice_number_options_' + index + ' #calculation_options_' + index ).hide();
+	}
+
+	if ( isNumberEnableRangeCalculation ) {
+		jQuery( '.list_choice_number_options_' + index + ' #range_min_calculation_options_' + index ).show();
+		jQuery( '.list_choice_number_options_' + index + ' #range_max_calculation_options_' + index ).show();
+
+		jQuery( '.list_choice_number_options_' + index + ' .range_min' ).hide();
+		jQuery( '.list_choice_number_options_' + index + ' .range_max' ).hide();
+
+		jQuery( '#list_choice_number_range_instructions_' + index ).hide();
+		jQuery( 'label[for=list_choice_number_range_instructions_' + index + ']' ).removeClass( 'inline' ).hide();
+	} else {
+		jQuery( '.list_choice_number_options_' + index + ' #range_min_calculation_options_' + index ).hide();
+		jQuery( '.list_choice_number_options_' + index + ' #range_max_calculation_options_' + index ).hide();
+
+		jQuery( '.list_choice_number_options_' + index + ' .range_min' ).show();
+		jQuery( '.list_choice_number_options_' + index + ' .range_max' ).show();
+
+		jQuery( '#list_choice_number_range_instructions_' + index ).show();
+		jQuery( 'label[for=list_choice_number_range_instructions_' + index + ']' ).addClass( 'inline' ).show();
+	}
 
 	if ( 'currency' == isNumberFormat ) {
 		// hide fixed point notation - does not apply to currency format
@@ -184,7 +253,6 @@ function itsg_gf_list_numformat_displayed_options( index ) {
 		fixed_poiont_label.removeClass( 'inline' );
 		fixed_poiont_input.hide();
 		// is selected rounding option is more than 2 - select 2
-		var rounding_selected_option = rounding_select.find( 'option:selected' ).val();
 		if ( rounding_selected_option > 2 || 1 == rounding_selected_option || 'norounding' == rounding_selected_option ) {
 			rounding_select.val(2);
 		}
@@ -197,14 +265,57 @@ function itsg_gf_list_numformat_displayed_options( index ) {
 			}
 		});
 	} else {
-		// display fixed point notation
-		fixed_poiont_label.show();
-		fixed_poiont_label.addClass( 'inline' );
-		fixed_poiont_input.show();
-		// display all options
-		rounding_select.find( 'option' ).each( function() {
-			jQuery( this ).show();
-		});
+		if ( 'norounding' == rounding_selected_option ) {
+			// hide fixed point notation - does not when no rounding
+			fixed_poiont_label.hide();
+			fixed_poiont_label.removeClass( 'inline' );
+			fixed_poiont_input.hide();
+
+			rounding_direction_select.hide();
+			rounding_direction_select_label.hide();
+		} else if ( '0' == rounding_selected_option ) {
+			// hide fixed point notation - does not when rounding to integer
+			fixed_poiont_label.hide();
+			fixed_poiont_label.removeClass( 'inline' );
+			fixed_poiont_input.hide();
+
+			rounding_direction_select.show();
+			rounding_direction_select_label.show();
+			// display all options
+			rounding_select.find( 'option' ).each( function() {
+				jQuery( this ).show();
+			});
+		} else {
+			// display fixed point notation
+			fixed_poiont_label.show();
+			fixed_poiont_label.addClass( 'inline' );
+			fixed_poiont_input.show();
+
+			rounding_direction_select.show();
+			rounding_direction_select_label.show();
+			// display all options
+			rounding_select.find( 'option' ).each( function() {
+				jQuery( this ).show();
+			});
+		}
+	}
+}
+
+function isNumberFormulaContentCallback( index ) {
+	if ( 'single' == index ) {
+		calculationFormula = 'isNumberCalculationFormula';
+		SetFieldProperty( calculationFormula, jQuery( '#list_choice_calculation_formula_' + index ).val().trim() );
+	} else {
+		var value = jQuery( '#list_choice_calculation_formula_' + index ).val().trim();
+		field.choices[ index ].isNumberCalculationFormula = value;
+
+		var value = jQuery( '#list_choice_range_min_calculation_formula_' + index ).val().trim();
+		field.choices[ index ].isNumberRangeMin = value;
+		jQuery( '#list_choice_number_range_min_' + index ).val( value );
+
+		var value = jQuery( '#list_choice_range_max_calculation_formula_' + index ).val().trim();
+		field.choices[ index ].isNumberRangeMax = value;
+		jQuery( '#list_choice_number_range_max_' + index ).val( value );
 	}
 }
 
@@ -221,13 +332,169 @@ function itsg_gf_list_numformat_init() {
 				for( var index = 0; index < field.choices.length; index++ ) {
 					var isNumber = field.choices[ index ].isNumber;
 					if ( true == isNumber ) {
+						// add calculation options
+						if ( ! jQuery( '.list_choice_number_options_' + index + ' #calculation_options_' + index ).length ) {
+							// create calculation input, change callback
+							var new_formula_input = jQuery( '#calculation_options' ).prop('outerHTML').replace( /FormulaContentCallback/g, '' ).replace( /calculation_options/g, 'calculation_options_' + index ).replace( /field_calculation_formula/g, 'list_choice_calculation_formula_' + index ).replace( /field.calculationFormula/g, 'field.choices[' + index + '].isNumberCalculationFormula' );
+							// add calculation input to end of column number options
+							jQuery( '.list_choice_number_options_' + index ).append( new_formula_input );
+							// remove tooltip
+							jQuery( '#calculation_options_' + index + ' a.gf_tooltip' ).remove();
+							// add calculation input change event for select
+							jQuery( '#calculation_options_' + index + ' #list_choice_calculation_formula_' + index + '_variable_select' ).change(function() {
+								var current_index = jQuery(this).parents( "div[id^='calculation_options_']" ).attr( 'id' ).replace( 'calculation_options_', '' );
+								isNumberFormulaContentCallback ( current_index );
+							});
+							// add calculation input change event for buttons
+							jQuery( '#calculation_options_' + index + ' div.gf_calculation_buttons input' ).click(function() {
+								var current_index = jQuery(this).parents( "div[id^='calculation_options_']" ).attr( 'id' ).replace( 'calculation_options_', '' );
+								isNumberFormulaContentCallback ( current_index );
+							});
+							// add calculation input change event for typed changes to textarea
+							jQuery( '#calculation_options_' + index + ' textarea#list_choice_calculation_formula_' + index ).change(function() {
+								var current_index = jQuery(this).parents( "div[id^='calculation_options_']" ).attr( 'id' ).replace( 'calculation_options_', '' );
+								isNumberFormulaContentCallback ( current_index );
+							});
+
+							// remove any unsupported options - leave only column row value options
+							// remove the standard options
+							jQuery( '#list_choice_calculation_formula_' + index + '_variable_select optgroup[label="Allowable form fields"]' ).remove();
+							// remove any options created by other plugins
+							jQuery( 'li#field_' + field.id + ' #list_choice_calculation_formula_' + index + '_variable_select' ).find( 'option' ).each( function() {
+							  if ( '' !== jQuery( this ).val() && ( -1 == jQuery( this ).val().indexOf( ':' + field.id + '.' ) || -1 == jQuery( this ).text().indexOf( '(' + text_column_row_value + ')' ) ) ) {
+								 jQuery( this ).remove();
+							  }
+							});
+
+							// remove default merge tags options
+							jQuery( '#calculation_options_' + index + ' #field_calculation_rounding' ).remove();
+							jQuery( '#calculation_options_' + index + ' label[for="field_calculation_rounding"]' ).remove();
+
+							// add Enable Calculation checkbox
+							jQuery('<input>').attr({
+								type: 'checkbox',
+								id: 'list_choice_number_enable_calculation_' + index,
+								onclick: 'SetFieldChoiceNumFormat( ' + index + ' )',
+								checked: field.choices[ index ].isNumberEnableCalculation
+							}).insertBefore('#calculation_options_' + index );
+
+							// add Enable Calculation label
+							jQuery('<label>').attr({
+								type: 'checkbox',
+								class: 'inline',
+								for: 'list_choice_number_enable_calculation_' + index,
+							}).text( text_enable_calculation ).insertBefore('#calculation_options_' + index );
+
+							// reset height in case value has been set
+							jQuery( '#calculation_options_' + index ).css( 'height', 'auto' );
+							jQuery( '#calculation_options_' + index + ' textarea#list_choice_calculation_formula_' + index ).css( 'height', '80px' );
+						}
+
+						// add range min and max calculation fields
+						if ( ! jQuery( '.list_choice_number_options_' + index + ' #range_min_calculation_options_' + index ).length ) {
+
+							// MIN FORUMULA
+
+							// create calculation input, change callback
+							var new_formula_input = jQuery( '#calculation_options' ).prop('outerHTML').replace( /FormulaContentCallback/g, '' ).replace( /calculation_options/g, 'range_min_calculation_options_' + index ).replace( /field_calculation_formula/g, 'list_choice_range_min_calculation_formula_' + index ).replace( /field.calculationFormula/g, 'field.choices[' + index + '].isNumberRangeMin' );
+							// add calculation input to end of column number options
+							jQuery( '.list_choice_number_options_' + index + ' div.range').append( new_formula_input );
+							// remove tooltip
+							jQuery( '#range_min_calculation_options_' + index + ' a.gf_tooltip' ).remove();
+							// change label to Min Formula
+							jQuery( '#range_min_calculation_options_' + index + ' label' ).text( text_min_formula );
+							// add calculation input change event for select
+							jQuery( '#range_min_calculation_options_' + index + ' #list_choice_range_min_calculation_formula_' + index + '_variable_select' ).change(function() {
+								var current_index = jQuery(this).parents( "div[id^='range_min_calculation_options_']" ).attr( 'id' ).replace( 'range_min_calculation_options_', '' );
+								isNumberFormulaContentCallback ( current_index );
+							});
+							// add calculation input change event for buttons
+							jQuery( '#range_min_calculation_options_' + index + ' div.gf_calculation_buttons input' ).click(function() {
+								var current_index = jQuery(this).parents( "div[id^='range_min_calculation_options_']" ).attr( 'id' ).replace( 'range_min_calculation_options_', '' );
+								isNumberFormulaContentCallback ( current_index );
+							});
+							// add calculation input change event for typed changes to textarea
+							jQuery( '#range_min_calculation_options_' + index + ' textarea#list_choice_range_min_calculation_formula_' + index ).change(function() {
+								var current_index = jQuery(this).parents( "div[id^='range_min_calculation_options_']" ).attr('id').replace('range_min_calculation_options_','');
+								isNumberFormulaContentCallback ( current_index );
+							});
+
+							// remove any unsupported options - leave only column row value options
+							// remove the standard options
+							jQuery( '#list_choice_range_min_calculation_formula_' + index + '_variable_select optgroup[label="Allowable form fields"]' ).remove();
+							// remove any options created by other plugins
+							jQuery( 'li#field_' + field.id + ' #list_choice_range_min_calculation_formula_' + index + '_variable_select' ).find( 'option' ).each( function() {
+							  if ( '' !== jQuery( this ).val() && ( -1 == jQuery( this ).val().indexOf( ':' + field.id + '.' ) || -1 == jQuery( this ).text().indexOf( '(' + text_column_row_value + ')' ) ) ) {
+								 jQuery( this ).remove();
+							  }
+							});
+
+							// remove default merge tags options
+							jQuery( '#range_min_calculation_options_' + index + ' #field_calculation_rounding' ).remove();
+							jQuery( '#range_min_calculation_options_' + index + ' label[for="field_calculation_rounding"]' ).remove();
+
+							// MAX FORUMULA
+
+							// create calculation input, change callback
+							var new_formula_input = jQuery( '#calculation_options' ).prop('outerHTML').replace( /FormulaContentCallback/g, '' ).replace( /calculation_options/g, 'range_max_calculation_options_' + index ).replace( /field_calculation_formula/g, 'list_choice_range_max_calculation_formula_' + index ).replace( /field.calculationFormula/g, 'field.choices[' + index + '].isNumberRangeMax' );
+							// add calculation input to end of column number options
+							jQuery( '.list_choice_number_options_' + index + ' div.range').append( new_formula_input );
+							// remove tooltip
+							jQuery( '#range_max_calculation_options_' + index + ' a.gf_tooltip' ).remove();
+							// change label to Max Formula
+							jQuery( '#range_max_calculation_options_' + index + ' label' ).text( text_max_formula );
+							// add calculation input change event for select
+							jQuery( '#range_max_calculation_options_' + index + ' #list_choice_range_max_calculation_formula_' + index + '_variable_select' ).change(function() {
+								var current_index = jQuery(this).parents( "div[id^='range_max_calculation_options_']" ).attr( 'id' ).replace( 'range_max_calculation_options_', '' );
+								isNumberFormulaContentCallback ( current_index );
+							});
+							// add calculation input change event for buttons
+							jQuery( '#range_max_calculation_options_' + index + ' div.gf_calculation_buttons input' ).click(function() {
+								var current_index = jQuery(this).parents( "div[id^='range_max_calculation_options_']" ).attr( 'id' ).replace( 'range_max_calculation_options_', '' );
+								isNumberFormulaContentCallback ( current_index );
+							});
+							// add calculation input change event for typed changes to textarea
+							jQuery( '#range_max_calculation_options_' + index + ' textarea#list_choice_range_max_calculation_formula_' + index ).change(function() {
+								var current_index = jQuery(this).parents( "div[id^='range_max_calculation_options_']" ).attr( 'id' ).replace( 'range_max_calculation_options_', '' );
+								isNumberFormulaContentCallback ( current_index );
+							});
+
+							// remove any unsupported options - leave only column row value options
+							// remove the standard options
+							jQuery( '#list_choice_range_max_calculation_formula_' + index + '_variable_select optgroup[label="Allowable form fields"]' ).remove();
+							// remove any options created by other plugins
+							jQuery( 'li#field_' + field.id + ' #list_choice_range_max_calculation_formula_' + index + '_variable_select' ).find( 'option' ).each( function() {
+							  if ( '' !== jQuery( this ).val() && ( -1 == jQuery( this ).val().indexOf( ':' + field.id + '.' ) || -1 == jQuery( this ).text().indexOf( '(' + text_column_row_value + ')' ) ) ) {
+								 jQuery( this ).remove();
+							  }
+							});
+
+							// remove default merge tags options
+							jQuery( '#range_max_calculation_options_' + index + ' #field_calculation_rounding' ).remove();
+							jQuery( '#range_max_calculation_options_' + index + ' label[for="field_calculation_rounding"]' ).remove();
+
+							// add Enable Calculation checkbox
+							jQuery('<input>').attr({
+								type: 'checkbox',
+								id: 'list_choice_number_enable_range_calculation_' + index,
+								onclick: 'SetFieldChoiceNumFormat( ' + index + ' )',
+								checked: field.choices[ index ].isNumberEnableCalculation
+							}).insertBefore('#range_min_calculation_options_' + index );
+
+							// add Enable Range Calculation label
+							jQuery('<label>').attr({
+								type: 'checkbox',
+								class: 'inline',
+								for: 'list_choice_number_enable_range_calculation_' + index,
+							}).text( text_enable_range_calculation ).insertBefore('#range_min_calculation_options_' + index );
+
+							// reset height in case value has been set
+							jQuery( '#range_min_calculation_options_' + index ).css( 'height', 'auto' );
+							jQuery( '#range_min_calculation_options_' + index + ' textarea#list_choice_range_max_calculation_formula_' + index ).css( 'height', '80px' );
+						}
 
 						// display options
-						if ( field.choices[ index ].isNumber ) {
-							jQuery( '.list_choice_number_options_' + index ).show();
-						} else {
-							jQuery( '.list_choice_number_options_' + index ).hide();
-						}
+						jQuery( '.list_choice_number_options_' + index ).show();
 
 						// set values
 						var isNumber = 'undefined' !== typeof field.choices[ index ].isNumber ? field.choices[ index ].isNumber : false;
@@ -237,6 +504,9 @@ function itsg_gf_list_numformat_init() {
 						var isNumberRoundingDirection = 'undefined' !== typeof field.choices[ index ].isNumberRoundingDirection ? field.choices[ index ].isNumberRoundingDirection : 'roundclosest';
 						var isNumberRangeMin = 'undefined' !== typeof field.choices[ index ].isNumberRangeMin ? field.choices[ index ].isNumberRangeMin : '';
 						var isNumberRangeMax = 'undefined' !== typeof field.choices[ index ].isNumberRangeMax ? field.choices[ index ].isNumberRangeMax : '';
+						var isNumberEnableCalculation = 'undefined' !== typeof field.choices[ index ].isNumberEnableCalculation ? field.choices[ index ].isNumberEnableCalculation : false;
+						var isNumberEnableRangeCalculation = 'undefined' !== typeof field.choices[ index ].isNumberEnableRangeCalculation ? field.choices[ index ].isNumberEnableRangeCalculation : false;
+						var isNumberCalculationFormula = 'undefined' !== typeof field.choices[ index ].isNumberCalculationFormula ? field.choices[ index ].isNumberCalculationFormula : '';
 
 						jQuery( '#field_columns #list_choice_number_enable_' + index ).prop( 'checked', isNumber );
 						jQuery( '#field_columns #list_choice_number_format_' + index ).val( isNumberFormat );
@@ -245,12 +515,21 @@ function itsg_gf_list_numformat_init() {
 						jQuery( '#field_columns #list_choice_number_rounding_direction_' + index ).val( isNumberRoundingDirection );
 						jQuery( '#field_columns #list_choice_number_range_min_' + index ).val( isNumberRangeMin );
 						jQuery( '#field_columns #list_choice_number_range_max_' + index ).val( isNumberRangeMax );
+						jQuery( '#field_columns #list_choice_number_enable_calculation_' + index ).prop( 'checked', isNumberEnableCalculation );
+						jQuery( '#field_columns #list_choice_number_enable_range_calculation_' + index ).prop( 'checked', isNumberEnableRangeCalculation );
+						jQuery( '#field_columns #list_choice_calculation_formula_' + index ).val( isNumberCalculationFormula );
+						jQuery( '#field_columns #list_choice_range_min_calculation_formula_' + index ).val( isNumberRangeMin );
+						jQuery( '#field_columns #list_choice_range_max_calculation_formula_' + index ).val( isNumberRangeMax );
 
 						// set drop down options
 						itsg_gf_list_numformat_displayed_options( index )
+					}  else {
+						jQuery( '.list_choice_number_options_' + index ).hide();
 					}
 				}
 			} else {
+				var index = 'single';
+
 				// show single column options
 				jQuery( '.list_number_settings' ).show();
 
@@ -262,6 +541,7 @@ function itsg_gf_list_numformat_init() {
 				var isNumberRoundingDirection = 'undefined' !== typeof field.isNumberRoundingDirection ? field.isNumberRoundingDirection : 'roundclosest';
 				var isNumberRangeMin = 'undefined' !== typeof field.isNumberRangeMin ? field.isNumberRangeMin : '';
 				var isNumberRangeMax = 'undefined' !== typeof field.isNumberRangeMax ? field.isNumberRangeMax : '';
+				var isNumberRangeInstructions = 'undefined' !== typeof field.isNumberRangeInstructions ? field.isNumberRangeInstructions : true;
 
 				jQuery( '#field_settings .list_number_settings #list_number_enable' ).prop( 'checked', isNumber );
 				jQuery( '#field_settings .list_number_settings #list_choice_number_format_single' ).val( isNumberFormat );
@@ -270,15 +550,16 @@ function itsg_gf_list_numformat_init() {
 				jQuery( '#field_settings .list_number_settings #list_choice_number_rounding_single_direction' ).val( isNumberRoundingDirection );
 				jQuery( '#field_settings .list_number_settings #list_choice_number_range_min_single' ).val( isNumberRangeMin );
 				jQuery( '#field_settings .list_number_settings #list_choice_number_range_max_single' ).val( isNumberRangeMax );
+				jQuery( '#field_settings .list_number_settings #list_choice_number_range_instructions_single' ).prop( 'checked', isNumberRangeInstructions );
 
 				// display options if isNumber enabled
 				if ( field.isNumber ) {
-					jQuery( '#list_number_options' ).show();
+					jQuery( '.list_choice_number_options_' + index ).show();
 
 					// set drop down options
-					itsg_gf_list_numformat_displayed_options( 'single' );
+					itsg_gf_list_numformat_displayed_options( index );
 				} else {
-					jQuery( '#list_number_options' ).hide();
+					jQuery( '.list_choice_number_options_' + index ).hide();
 				}
 			}
 		}
@@ -287,7 +568,7 @@ function itsg_gf_list_numformat_init() {
 
 // trigger for when column titles are updated
 jQuery( document ).on( 'change', '#gfield_settings_columns_container #field_columns li', function() {
-		itsg_gf_list_numformat_init();
+	itsg_gf_list_numformat_init();
 });
 
 // trigger when 'Enable multiple columns' is ticked
@@ -297,5 +578,14 @@ jQuery( document ).on('change', '#field_settings input[id=field_columns_enabled]
 
 // trigger for when field is opened
 jQuery( document ).bind( 'gform_load_field_settings', function( event, field, form ) {
-		itsg_gf_list_numformat_init();
+	itsg_gf_list_numformat_init();
+	setTimeout(function(){
+		if ( 'list' != field.type ) {
+			jQuery( 'li#field_' + field.id + ' #field_calculation_formula_variable_select' ).find( 'option' ).each( function() {
+				 if ( '' !== jQuery( this ).val() && ( -1 != jQuery( this ).text().indexOf( '(' + text_column_row_value + ')' ) ) ) {
+					jQuery( this ).remove();
+				}
+			});
+		}
+	}, 50);
 });

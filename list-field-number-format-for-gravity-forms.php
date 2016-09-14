@@ -2,7 +2,7 @@
 /*
 Plugin Name: List Field Number Format for Gravity Forms
 Description: Turn your list field columns into repeatable number fields
-Version: 1.0.1
+Version: 1.1.0
 Author: Adrian Gordon
 Author URI: http://www.itsupportguides.com
 License: GPL2
@@ -28,13 +28,44 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 //------------------------------------------
 
+if ( ! defined( 'ABSPATH' ) ) {
+	die();
+}
+
+add_action( 'admin_notices', 'ITSG_GF_ListField_Number_Format_admin_warnings', 20 );
+
+/*
+* Warning message if Gravity Forms is installed and enabled
+*/
+function ITSG_GF_ListField_Number_Format_admin_warnings() {
+	if ( ! ITSG_GF_ListField_Number_Format_is_gravityforms_installed() ) {
+		printf(
+			'<div class="error"><h3>%s</h3><p>%s</p><p>%s</p></div>',
+				__( 'Warning', 'list-field-number-format-for-gravity-forms' ),
+				sprintf ( __( 'The plugin %s requires Gravity Forms to be installed.', 'list-field-number-format-for-gravity-forms' ), '<strong>' . __( 'List Field Number Format for Gravity Forms', 'list-field-number-format-for-gravity-forms' ) .'</strong>' ),
+				sprintf ( esc_html__( 'Please %sdownload the latest version of Gravity Forms%s (affiliate link) and try again.', 'list-field-number-format-for-gravity-forms' ), '<a href="https://www.e-junkie.com/ecom/gb.php?cl=54585&c=ib&aff=299380" target="_blank">', '</a>' )
+		);
+	}
+} // END admin_warnings
+
+function ITSG_GF_ListField_Number_Format_is_gravityforms_installed() {
+	if ( !function_exists( 'is_plugin_active' ) || !function_exists( 'is_plugin_active_for_network' ) ) {
+		require_once( ABSPATH . '/wp-admin/includes/plugin.php' );
+	}
+	if ( is_multisite() ) {
+		return ( is_plugin_active_for_network( 'gravityforms/gravityforms.php' ) || is_plugin_active( 'gravityforms/gravityforms.php' ) );
+	} else {
+		return is_plugin_active( 'gravityforms/gravityforms.php' );
+	}
+} // END is_gravityforms_installed
+
 if ( class_exists( 'GFForms' ) ) {
     GFForms::include_addon_framework();
 
     class ITSG_GF_ListField_Number_Format extends GFAddOn {
 
         protected $_version = '1.0.1';
-        protected $_min_gravityforms_version = '1.9.9.8';
+        protected $_min_gravityforms_version = '1.9.15';
         protected $_slug = 'list-field-number-format-for-gravity-forms';
         protected $_full_path = __FILE__;
         protected $_title = 'List Field Number Format for Gravity Forms';
@@ -45,11 +76,26 @@ if ( class_exists( 'GFForms' ) ) {
 
 			require_once( GFCommon::get_base_path() . '/currency.php' );
 
-			add_action( 'gform_field_standard_settings', array( $this, 'field_ajaxupload_settings' ) , 10, 2 );
-			add_filter( 'gform_tooltips', array( $this, 'field_ajaxupload_tooltip' ) );
-			add_filter( 'gform_column_input_content', array( &$this, 'change_column_content' ), 10, 6 );
-			add_filter( 'gform_validation', array( &$this, 'validate_columns' ) );
+			add_action( 'gform_field_standard_settings', array( $this, 'field_settings' ) , 10, 2 );
+			add_filter( 'gform_tooltips', array( $this, 'field_tooltip' ), 10, 1 );
+			add_filter( 'gform_column_input_content', array( $this, 'change_column_content' ), 10, 6 );
+			add_filter( 'gform_validation', array( $this, 'validate_number_values' ), 10, 1 );
+			add_filter( 'gform_custom_merge_tags', array( $this, 'list_row_calculation_merge_tags' ), 10, 4 );
+			add_filter( 'gform_pre_validation', array( $this,'list_row_calculation'), 10, 1 );
+			add_filter( 'gform_get_field_value', array( $this, 'list_column_display_total' ), 10, 3 );
+
+			if ( self::is_minimum_php_version() ) {
+				require_once( plugin_dir_path( __FILE__ ).'gravitypdf/gravitypdf.php' );
+			}
+
         }
+
+		/*
+         * Check if PHP version is at least 5.4
+         */
+        private static function is_minimum_php_version() {
+			return version_compare( phpversion(), '5.4', '>=' );
+        } // END is_minimum_php_version
 
 		public function scripts() {
 			$min = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG || isset( $_GET['gform_debug'] ) ? '' : '.min';
@@ -79,9 +125,26 @@ if ( class_exists( 'GFForms' ) ) {
 			 return array_merge( parent::scripts(), $scripts );
 		} // END scripts
 
+		public function styles() {
+			$min = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG || isset( $_GET['gform_debug'] ) ? '' : '.min';
+			$version = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG || isset( $_GET['gform_debug'] ) ? mt_rand() : $this->_version;
+
+			$styles = array(
+				array(
+					'handle'  => 'itsg_gf_listnumformat_css',
+					'src'     => $this->get_base_url() . "/css/itsg_gf_listnumformat_css{$min}.css",
+					'version' => $version,
+					'media'   => 'screen',
+					'enqueue' => array( array( $this, 'form_has_list_number_field' ) ),
+				),
+			);
+
+			return array_merge( parent::styles(), $styles );
+		} // END styles
+
 		function requires_admin_js() {
 			return GFCommon::is_form_editor();
-		}
+		} // END requires_admin_js
 
 		public function localize_scripts( $form, $is_ajax ) {
 			// Localize the script with data
@@ -92,13 +155,14 @@ if ( class_exists( 'GFForms' ) ) {
 
 			if ( is_array( $form['fields'] ) ) {
 				foreach ( $form['fields'] as $field ) {
-					if ( 'list' == $field->type ) {
+					$field_type = $field->type;
+					if ( 'list' == $field_type ) {
 						$form_id = $form['id'];
 						$field_id = $field['id'];
 						$has_columns = is_array( $field->choices );
 						if ( $has_columns ) {
-							foreach( $field['choices'] as $key=>$choice ){
-								if ( true  == rgar( $choice, 'isNumber' ) )  {
+							foreach( $field['choices'] as $key=>$choice ) {
+								if ( rgar( $choice, 'isNumber' ) ) {
 									$column_number = $key + 1;
 
 									$isNumberFormat = strlen( $default_isNumberFormat) > 0 ? $default_isNumberFormat : rgar( $choice, 'isNumberFormat' );
@@ -110,8 +174,45 @@ if ( class_exists( 'GFForms' ) ) {
 									$isNumberRoundingDirection = strlen( rgar( $choice, 'isNumberRoundingDirection' ) ) > 0 ? rgar( $choice, 'isNumberRoundingDirection' ) : 'roundclosest';
 									$number_format_fields[ $field_id ][ $column_number ]['isNumberRoundingDirection'] = $isNumberRoundingDirection;
 
-									$isNumberFixedPoint = strlen( rgar( $choice, 'isNumberFixedPoint' ) ) > 0 ? $field->isNumberFixedPoint : 'false';
+									$isNumberFixedPoint = true == rgar( $choice, 'isNumberFixedPoint' ) ? $field->isNumberFixedPoint : 'false';
 									$number_format_fields[ $field_id ][ $column_number ]['isNumberFixedPoint'] = rgar( $choice, 'isNumberFixedPoint' );
+
+									$isNumberColumnTotal = true == rgar( $choice, 'isNumberColumnTotal' ) ? 'true' : 'false';
+									$number_format_fields[ $field_id ][ $column_number ]['isNumberColumnTotal'] = $isNumberColumnTotal;
+
+									if ( true  == rgar( $choice, 'isNumberEnableCalculation' ) ) {
+
+										preg_match_all( '/{[^{]*?:(\d+)\.?(\d+)?}/mi', rgar( $choice, 'isNumberCalculationFormula' ), $matches, PREG_SET_ORDER );
+
+										if ( is_array( $matches ) ) {
+
+											foreach ( $matches as $match ) {
+
+												// get the $field object for the provided id
+												$field_id = $match[1];
+												$calc_column_number = $match[2];
+												$field   = RGFormsModel::get_field( $form, $field_id );
+
+												// check the field type as we only want the rest of the function to run if the field type is list
+												if ( 'list' != $field->get_input_type() ) {
+													continue;
+												}
+												$number_format_fields[ $field_id ][ $calc_column_number ]['isNumberEnableCalculation'] = $column_number;
+											}
+										}
+									}
+
+									if ( ''  !== rgar( $choice, 'isNumberCalculationFormula' ) ) {
+										$number_format_fields[ $field_id ][ $column_number ]['isNumberCalculationFormula'] = esc_js( rgar( $choice, 'isNumberCalculationFormula' ) );
+									}
+
+									if ( ''  !== rgar( $choice, 'isNumberRangeMin' ) ) {
+										$number_format_fields[ $field_id ][ $column_number ]['isNumberRangeMinFormula'] = esc_js( rgar( $choice, 'isNumberRangeMin' ) );
+									}
+
+									if ( ''  !== rgar( $choice, 'isNumberRangeMax' ) ) {
+										$number_format_fields[ $field_id ][ $column_number ]['isNumberRangeMaxFormula'] = esc_js( rgar( $choice, 'isNumberRangeMax' ) );
+									}
 								}
 							}
 						} elseif ( true == $field->isNumber ) {
@@ -126,8 +227,11 @@ if ( class_exists( 'GFForms' ) ) {
 							$isNumberRoundingDirection = strlen( $field->isNumberRoundingDirection ) > 0 ? $field->isNumberRoundingDirection : 'roundclosest';
 							$number_format_fields[ $field_id ][ $column_number ]['isNumberRoundingDirection'] = $isNumberRoundingDirection;
 
-							$isNumberFixedPoint = strlen( $field->isNumberFixedPoint ) > 0 ? $field->isNumberFixedPoint : 'false';
+							$isNumberFixedPoint = true == $field->isNumberFixedPoint > 0 ? $field->isNumberFixedPoint : 'false';
 							$number_format_fields[ $field_id ][ $column_number ]['isNumberFixedPoint'] = $isNumberFixedPoint;
+
+							$isNumberColumnTotal = true == $field->isNumberColumnTotal ? 'true' : 'false';
+							$number_format_fields[ $field_id ][ $column_number ]['isNumberColumnTotal'] = $isNumberColumnTotal;
 						}
 					}
 				}
@@ -135,6 +239,8 @@ if ( class_exists( 'GFForms' ) ) {
 
 			$settings_array = array(
 				'form_id' => $form['id'],
+				'text_cannot_be_less_than' => esc_js( __( 'Cannot be less than', 'list-field-number-format-for-gravity-forms' ) ),
+				'text_cannot_be_more_than' => esc_js( __( 'Cannot be more than', 'list-field-number-format-for-gravity-forms' ) ),
 				'is_entry_detail' => $is_entry_detail ? $is_entry_detail : 0,
 				'number_format_fields' => $number_format_fields,
 			);
@@ -159,10 +265,17 @@ if ( class_exists( 'GFForms' ) ) {
 				'text_range' => esc_js( __( 'Range', 'list-field-number-format-for-gravity-forms' ) ),
 				'text_min' => esc_js( __( 'Min', 'list-field-number-format-for-gravity-forms' ) ),
 				'text_max' => esc_js( __( 'Max', 'list-field-number-format-for-gravity-forms' ) ),
-				'text_format_currency' => esc_js( $this->get_number_format_text( 'currency' ) ),
-				'text_format_decimal_dot' => esc_js( $this->get_number_format_text( 'decimal_dot' ) ),
-				'text_format_decimal_comma' => esc_js( $this->get_number_format_text( 'decimal_comma' ) ),
+				'text_format_currency' => '$9,999.00',
+				'text_format_decimal_dot' => '9,999.99',
+				'text_format_decimal_comma' => '9.999,99',
 				'text_fixed_point' => esc_js( __( 'Fixed point notation', 'list-field-number-format-for-gravity-forms' ) ),
+				'text_enable_calculation' => esc_js( __( 'Enable Calculation', 'list-field-number-format-for-gravity-forms' ) ),
+				'text_enable_range_calculation' => esc_js( __( 'Enable Range Calculation', 'list-field-number-format-for-gravity-forms' ) ),
+				'text_enable_range_instructions' => esc_js( __( 'Enable Range Instructions', 'list-field-number-format-for-gravity-forms' ) ),
+				'text_enable_column_total' => esc_js( __( 'Enable Column Total', 'list-field-number-format-for-gravity-forms' ) ),
+				'text_min_formula' => esc_js( __( 'Min Formula', 'list-field-number-format-for-gravity-forms' ) ),
+				'text_max_formula' => esc_js( __( 'Max Formula', 'list-field-number-format-for-gravity-forms' ) ),
+				'text_column_row_value' => esc_js( __( 'Column row value', 'list-field-number-format-for-gravity-forms' ) ),
 			);
 
 			wp_localize_script( 'itsg_gf_listnumformat_admin_js', 'itsg_gf_listnumformat_admin_js_settings', $settings_array );
@@ -171,7 +284,7 @@ if ( class_exists( 'GFForms' ) ) {
 		/*
           * Adds custom sortable setting for field
           */
-        function field_ajaxupload_settings( $position, $form_id ) {
+        function field_settings( $position, $form_id ) {
             // Create settings on position 50 (top position)
             if ( 50 == $position ) {
 				?>
@@ -182,7 +295,7 @@ if ( class_exists( 'GFForms' ) ) {
 					<?php _e( 'Enable Number Format', 'list-field-number-format-for-gravity-forms' ); ?>
 					<?php gform_tooltip( 'list_number_enable' );?>
 					</label>
-					<div id="list_number_options" style="display:none; background: rgb(244, 244, 244) none repeat scroll 0px 0px; padding: 10px; border-bottom: 1px solid grey; margin-top: 10px;" >
+					<div class="list_choice_number_options_single" style="display:none; background: rgb(244, 244, 244) none repeat scroll 0px 0px; padding: 10px; border-bottom: 1px solid grey; margin-top: 10px;" >
 						<div style="clear: both;">
 						<label for="list_choice_number_format_single" class="section_label">
 						<?php _e( 'Number Format', 'list-field-number-format-for-gravity-forms' ); ?>
@@ -198,7 +311,7 @@ if ( class_exists( 'GFForms' ) ) {
 						<?php _e( 'Rounding', 'list-field-number-format-for-gravity-forms' ); ?>
 						</label>
 						</div>
-						<select style="margin-bottom: 10px;" onchange="SetFieldProperty( 'isNumberRounding', this.value);" id="list_choice_number_rounding_single" >
+						<select style="margin-bottom: 10px;" onchange="SetFieldProperty( 'isNumberRounding', this.value);itsg_gf_list_numformat_displayed_options( 'single' )" id="list_choice_number_rounding_single" >
 						<option value="norounding"><?php _e( 'Do not round', 'list-field-number-format-for-gravity-forms' ); ?></option>
 						<option value="0">0</option>
 						<option value="1">1</option>
@@ -214,11 +327,11 @@ if ( class_exists( 'GFForms' ) ) {
 						</label>
 						<br><br>
 						<div style="clear: both;">
-						<label for="list_choice_number_rounding_single_direction" class="section_label">
+						<label for="list_choice_number_rounding_direction_single" class="section_label">
 						<?php _e( 'Rounding Direction', 'list-field-number-format-for-gravity-forms' ); ?>
 						</label>
 						</div>
-						<select style="margin-bottom: 10px;" onchange="SetFieldProperty( 'isNumberRoundingDirection', this.value);" id="list_choice_number_rounding_single_direction" >
+						<select style="margin-bottom: 10px;" onchange="SetFieldProperty( 'isNumberRoundingDirection', this.value);" id="list_choice_number_rounding_direction_single" >
 						<option value="roundclosest"><?php _e( 'Round closest', 'list-field-number-format-for-gravity-forms' ); ?></option>
 						<option value="roundup"><?php _e( 'Round up', 'list-field-number-format-for-gravity-forms' ); ?></option>
 						<option value="rounddown"><?php _e( 'Round down', 'list-field-number-format-for-gravity-forms' ); ?></option>
@@ -226,7 +339,7 @@ if ( class_exists( 'GFForms' ) ) {
 						<br>
 						<div style="clear: both;">
 						<label class="section_label">
-						<?php _e( 'Round', 'list-field-number-format-for-gravity-forms' ); ?>
+						<?php _e( 'Range', 'list-field-number-format-for-gravity-forms' ); ?>
 						</label>
 						</div>
 						<div class="range_min">
@@ -242,19 +355,29 @@ if ( class_exists( 'GFForms' ) ) {
 						</label>
 						</div>
 						<br>
+						<input type="checkbox" id="list_choice_number_range_instructions_single" onclick="SetFieldProperty( 'isNumberRangeInstructions', this.checked );" >
+						<label for="list_choice_number_range_instructions_single" class="inline">
+						<?php _e( 'Enable Range Instructions', 'list-field-number-format-for-gravity-forms' ); ?>
+						</label>
+						<br><br>
+						<input type="checkbox" id="list_choice_number_column_total_single" onclick="SetFieldProperty( 'isNumberColumnTotal', this.checked );" >
+						<label for="list_choice_number_column_total_single" class="inline">
+						<?php _e( 'Enable Column Total', 'list-field-number-format-for-gravity-forms' ); ?>
+						</label>
+						<br><br>
 					</div>
 				</li>
 			<?php
             }
-        } // END field_ajaxupload_settings
+        } // END field_settings
 
 		/*
          * Tooltip
          */
-		function field_ajaxupload_tooltip( $tooltips ) {
+		function field_tooltip( $tooltips ) {
 			$tooltips['list_number_enable'] = "<h6>". __( 'Number Format', 'list-field-number-format-for-gravity-forms' )."</h6>". __( 'Select this option to set column as a number format field.', 'list-field-number-format-for-gravity-forms' );
 			return $tooltips;
-		} // END field_ajaxupload_tooltip
+		} // END field_tooltip
 
 		/*
          * Changes column field
@@ -265,18 +388,16 @@ if ( class_exists( 'GFForms' ) ) {
 				if ( $has_columns ) {
 					foreach( $field['choices'] as $choice ) {
 						if ( $text == rgar( $choice, 'text' ) && true == rgar( $choice, 'isNumber' ) ) {
-							$number_format = rgar( $choice, 'isNumberFormat' );
-							$number_format_text = $this->get_number_format_text( $number_format );
-							$new_input = str_replace( "value='' ", "value='{$number_format_text}' ", $input );
-							return $new_input;
+							$isNumberFormat = rgar( $choice, 'isNumberFormat' );
+							$number_format_text = $this->get_formatted_value( '9999', $isNumberFormat );
+							$input = str_replace( "value='' ", "value='{$number_format_text}' ", $input );
 						}
 					}
 				} else {
 					if ( true == $field->isNumber ) {
-						$number_format = $field->isNumberFormat;
-						$number_format_text = $this->get_number_format_text( $number_format );
-						$new_input = str_replace( "value='' ", "value='{$number_format_text}' ", $input );
-						return $new_input;
+						$isNumberFormat = $field->isNumberFormat;
+						$number_format_text = $this->get_formatted_value( '9999', $isNumberFormat );
+						$input = str_replace( "value='' ", "value='{$number_format_text}' ", $input );
 					}
 				}
 			} else {
@@ -285,22 +406,41 @@ if ( class_exists( 'GFForms' ) ) {
 				if ( $has_columns ) {
 					$number_of_columns = sizeof( $field['choices'] );
 					foreach( $field['choices'] as $choice ) {
-						$min = rgar( $choice, 'isNumberRangeMin' );
-						$max = rgar( $choice, 'isNumberRangeMax' );
-						if ( $text == rgar( $choice, 'text' )  && true == rgar( $choice, 'isNumber' ) && ( is_numeric( $min ) || is_numeric( $max ) ) ) {
-							$message = $this->get_range_message( $min, $max);
-							$new_input =  $input . '<div class="instruction ">' . $message . "</div>";
-							return $new_input;
+						if ( $text == rgar( $choice, 'text' )  && true == rgar( $choice, 'isNumber' ) ) {
+							// add class to input
+							$classes = rgar( $choice, 'isNumberFormat' );
+							$classes .= true == rgar( $choice, 'isNumberColumnTotal' ) ? ' isNumberColumnTotal' : '';
+
+							$readonly = true == rgar( $choice, 'isNumberEnableCalculation' ) && '' !== rgar( $choice, 'isNumberCalculationFormula' ) ? "readonly='readonly'" : '';
+
+							$input = str_replace( "<input ", "<input {$readonly} class='{$classes}' ", $input );
+
+							$isNumberRangeMin = rgar( $choice, 'isNumberRangeMin' );
+							$isNumberRangeMax = rgar( $choice, 'isNumberRangeMax' );
+							$isNumberRangeInstructions = false != rgar( $choice, 'isNumberRangeInstructions' );
+							if ( $isNumberRangeInstructions && ( is_numeric( $isNumberRangeMin ) || is_numeric( $isNumberRangeMax ) ) ) {
+								// add instructions
+								$message = $this->get_input_range_message( $isNumberRangeMin, $isNumberRangeMax);
+								$input =  $input . '<div class="instruction ">' . $message . "</div>";
+							}
 						}
 					}
 				} else {
 					if ( true == $field->isNumber ) {
-						$min = $field->isNumberRangeMin;
-						$max = $field->isNumberRangeMax;
-						if ( is_numeric( $min ) || is_numeric( $max ) ) {
-							$message = $this->get_range_message( $min, $max);
-							$new_input =  $input . '<div class="instruction ">' . $message . "</div>";
-							return $new_input;
+						// add class to input
+						$classes = $field->isNumberFormat;
+						$classes .= true == $field->isNumberColumnTotal ? ' isNumberColumnTotal' : '';
+
+						$readonly = true == $field->isNumberEnableCalculation && '' !== $field->isNumberCalculationFormula ? "readonly='readonly'" : '';
+
+						$input = str_replace( "<input ", "<input class='{$classes}' ", $input );
+
+						$isNumberRangeMin = $field->isNumberRangeMin;
+						$isNumberRangeMax = $field->isNumberRangeMax;
+						$isNumberRangeInstructions = false != $field->isNumberRangeInstructions;
+						if ( $isNumberRangeInstructions && ( is_numeric( $isNumberRangeMin ) || is_numeric( $isNumberRangeMax ) ) ) {
+							$message = $this->get_input_range_message( $isNumberRangeMin, $isNumberRangeMax);
+							$input =  $input . '<div class="instruction ">' . $message . "</div>";
 						}
 					}
 				}
@@ -311,7 +451,7 @@ if ( class_exists( 'GFForms' ) ) {
 		/*
 		 * Handles custom validation for range
 		 */
-		function validate_columns( $validation_result ) {
+		function validate_number_values( $validation_result ) {
 			$form = $validation_result['form'];
 			if ( self::form_has_list_number_field( $form ) ) {
 				$current_page = rgpost( 'gform_source_page_number_' . $form['id'] ) ? rgpost( 'gform_source_page_number_' . $form['id'] ) : 1;
@@ -329,30 +469,32 @@ if ( class_exists( 'GFForms' ) ) {
 						if ( is_array( $value ) ) {
 							foreach( $value as $column_value ) {
 								$choice = $field['choices'][ $column_number ];
-								if ( true  == rgar( $choice, 'isNumber' ) )  {
+								if ( rgar( $choice, 'isNumber' ) )  {
 									$value = $column_value;
-									$number_format = rgar( $choice, 'isNumberFormat' );
-									$min = rgar( $choice, 'isNumberRangeMin' );
-									$max = rgar( $choice, 'isNumberRangeMax' );
+									$isNumberFormat = rgar( $choice, 'isNumberFormat' );
+									$isNumberRangeMin = rgar( $choice, 'isNumberRangeMin' );
+									$isNumberRangeMax = rgar( $choice, 'isNumberRangeMax' );
 									if ( ! empty( $value ) ) {
 
 										// check number is in correct format
-										if ( ! $this->is_valid_format_column_value( $value, $number_format ) ) {
+										if ( ! $this->is_column_value_valid_format( $value, $isNumberFormat ) ) {
 											$validation_result['is_valid'] = false; // set the form validation to false
 											$field->failed_validation = true;
 
-											$number_format_text = $this->get_number_format_text( $number_format );
+											$number_format_text = $this->get_formatted_value( '9999', $isNumberFormat );
 
 											$message = sprintf( esc_html__( "The column '%s' requires a value in %s format.", 'list-field-number-format-for-gravity-forms' ), $choice['text'], $number_format_text );
 											$field->validation_message = $message;
 											break;
 										}
 
+										$is_valid_number = $this->is_valid_number( $value, $isNumberFormat, $isNumberRangeMin, $isNumberRangeMax, $field );
+
 										// check number is in correct range
-										if ( ! $this->is_valid_number( $value, $number_format, $min, $max ) ) {
+										if ( ! $is_valid_number['result'] ) {
 											$validation_result['is_valid'] = false; // set the form validation to false
 											$field->failed_validation = true;
-											$message = $this->get_column_validation_range_message( $choice['text'], $min, $max );
+											$message = $this->get_column_validation_range_message( $choice['text'], $is_valid_number['result_min'], $is_valid_number['result_max'], $isNumberFormat );
 											$field->validation_message = $message;
 										}
 									}
@@ -370,26 +512,28 @@ if ( class_exists( 'GFForms' ) ) {
 							foreach( $value as $key => $column_value ) {
 								$value = $column_value;
 								if ( ! empty( $value ) ) {
-									$number_format = $field->isNumberFormat;
-									$min = $field->isNumberRangeMin;
-									$max = $field->isNumberRangeMax;
+									$isNumberFormat = $field->isNumberFormat;
+									$isNumberRangeMin = $field->isNumberRangeMin;
+									$isNumberRangeMax = $field->isNumberRangeMax;
 									// check number is in correct format
-									if ( ! $this->is_valid_format_column_value( $value, $number_format ) ) {
+									if ( ! $this->is_column_value_valid_format( $value, $isNumberFormat ) ) {
 										$validation_result['is_valid'] = false; // set the form validation to false
 										$field->failed_validation = true;
 
-										$number_format_text = $this->get_number_format_text( $number_format );
+										$number_format_text = $this->get_formatted_value( '9999', $isNumberFormat );
 
 										$message = sprintf( esc_html__( "Requires a value in %s format.", 'list-field-number-format-for-gravity-forms' ), $number_format_text );
 										$field->validation_message = $message;
 										break;
 									}
 
+									$is_valid_number = $this->is_valid_number( $value, $isNumberFormat, $isNumberRangeMin, $isNumberRangeMax, $field );
+
 									// check number is in correct range
-									if ( ! $this->is_valid_number( $value, $number_format, $min, $max ) ) {
+									if ( ! $is_valid_number['result'] ) {
 										$validation_result['is_valid'] = false; // set the form validation to false
 										$field->failed_validation = true;
-										$message = $this->get_validation_range_message( $min, $max );
+										$message = $this->get_validation_range_message( $is_valid_number['result_min'], $is_valid_number['result_max'], $isNumberFormat );
 										$field->validation_message = $message;
 									}
 								}
@@ -401,99 +545,285 @@ if ( class_exists( 'GFForms' ) ) {
 			//Assign modified $form object back to the validation result
 			$validation_result['form'] = $form;
 			return $validation_result;
-		} // END validate_columns
+		} // END validate_number_values
+
+		function list_row_calculation_merge_tags( $merge_tags, $form_id, $fields, $element_id ) {
+
+			// check the type of merge tag dropdown
+			if ( 'field_calculation_formula' != $element_id ) {
+				return $merge_tags;
+			}
+
+			foreach ( $fields as $field ) {
+
+				// check the field type as we only want to generate merge tags for list fields
+				if ( 'list' != $field->get_input_type() ) {
+					continue;
+				}
+
+				$label = $field->label;
+				$tag = '{' . $label . ':' . $field->id;
+				$column_count = count( $field->choices );
+
+				if ( $column_count > 1 ) {
+
+					$i = 0;
+
+					foreach ( $field->choices as $column ) {
+						$merge_tags[] = array(
+							'label' => $label . ' - ' . $column['text'] . ' (' . __( 'Column row value', 'list-field-number-format-for-gravity-forms' ) . ')',
+							'tag'   => $tag . '.' . ++ $i . '}'
+						);
+					}
+				}
+			}
+
+			return $merge_tags;
+		} // END list_row_calculation_merge_tags
+
+		function list_column_display_total( $value, $entry, $field ) {
+			if ( $value ) {
+				$is_entry_detail = GFCommon::is_entry_detail();
+				if ( !( $is_entry_detail && 'edit' == rgpost( 'screen_mode' ) ) && is_object( $field ) && 'list' == $field->type ) {
+					$has_columns = is_array( $field->choices );
+					$values = unserialize( $value );
+						if ( ! empty( $values ) ) {
+							$form_id = $entry['form_id'];
+							foreach ( $values as &$val ) {
+								if ( $has_columns ) {
+									$number_of_columns = sizeof( $field['choices'] );
+									$column_number = 0;
+									foreach ( $val as &$column ) {
+										if ( ! isset ( $column_total[ $column_number ] ) ) {
+											$column_total[ $column_number ] = 0;
+										}
+
+										if ( true  == rgar( $field['choices'][ $column_number ], 'isNumberColumnTotal' ) ) {
+											$number_format = rgar( $field['choices'][ $column_number ], 'isNumberFormat' );
+											$column_total[ $column_number ] += $this->get_clean_value( $column, $number_format );
+
+										}
+
+										if ( $column_number >= ( $number_of_columns - 1 ) ) {
+											$column_number = 0; // reset column number
+										} else {
+											$column_number = $column_number + 1; // increment column number
+										}
+									}
+								}
+							}
+							foreach ( $column_total as $key => $total ) {
+								if ( true  == rgar( $field['choices'][ $key ], 'isNumberColumnTotal' ) ) {
+									$isNumberFormat = rgar( $field['choices'][ $key ], 'isNumberFormat' );
+									$number_format_text = $this->get_formatted_value( $total, $isNumberFormat );
+									$column_label = rgars( $field->choices, "{$key}/text" ); // we'll be using the column label as the key
+									$array[ $column_label ] = "<div style='border-top: medium double; border-bottom: 1px solid;'><strong>{$number_format_text}</strong></div>";
+								}
+							}
+
+							array_push( $values, $array ); // add row to submit value array
+						}
+					$value = serialize( $values );
+				}
+
+			}
+			return $value;
+		} // END list_column_display_total
+
+		function list_row_calculation( $form ) {
+			if ( is_array( $form ) || is_object( $form ) ) {
+				foreach ( $form['fields'] as $field ) {  // for all form fields
+					if ( 'list' == $field->get_input_type() ) {
+						$has_columns = is_array( $field->choices );
+						if ( $has_columns ) { // row calculations only apply to multi-column list fields
+							$list_values = maybe_unserialize( RGFormsModel::get_field_value( $field ) );  // get the value of the field
+							$submit_value = []; // we'll be storing the submit value as an array for passing via POST
+							foreach ( $list_values as $row ) { // get each row
+								foreach ( $field['choices'] as $key => $choice ) { // for each column
+									$column = rgars( $field->choices, "{$key}/text" ); // we'll be using the column label as the key
+									$isNumber = rgar( $choice, 'isNumber' );
+									$isNumberEnableCalculation = rgar( $choice, 'isNumberEnableCalculation' );
+									$isNumberCalculationFormula = trim ( rgar( $choice, 'isNumberCalculationFormula' ) );
+									if ( $isNumber && $isNumberEnableCalculation && ! is_null ( $isNumberCalculationFormula ) ) {
+										$isNumberFormat = rgar( $choice, 'isNumberFormat' );
+
+										$result = $this->get_row_formula_result( $isNumberCalculationFormula, $field, $row ); // evaluate formula and return result
+
+										$row[ $column ] = $this->get_formatted_value( $result, $isNumberFormat ); // store result in the row value
+									}
+									array_push( $submit_value, $row[ $column ] ); // add row to submit value array
+								}
+							}
+							$field_id = $field['id'];
+							$_POST['input_' . $field_id] = $submit_value; // update post with new submit value
+						}
+					}
+				}
+			}
+			return $form;
+		} // END list_row_calculation
+
+		function get_formatted_value( $value, $number_format ) {
+			if ( 'currency' == $number_format ) {
+				$currency = new RGCurrency( GFCommon::get_currency() );
+				$value = $currency->to_money( $value );
+			} else {
+				$value = GFCommon::format_number( $value, $number_format );
+			}
+			return $value;
+		} // END get_formatted_value
 
 		// check is value provided is value, compared to number format and min/max range - used in validation
-		function is_valid_number( $value, $number_format, $min, $max ) {
+		function is_valid_number( $value, $number_format, $isNumberRangeMin, $isNumberRangeMax, $field ) {
+			$is_valid_number= []; // we'll be returning the result along with evaluated range details as an array
+			$is_valid_number['result'] = true;
+			$is_valid_number['result_min'] = null;
+			$is_valid_number['result_max'] = null;
 
-			$value = $this->get_clean_column_value( $value, $number_format );
+			$isNumberRangeMin = trim( $isNumberRangeMin );
+			$isNumberRangeMax = trim( $isNumberRangeMax );
+
+			$value = $this->get_clean_value( $value, $number_format );
 
 			$value = GFCommon::maybe_add_leading_zero( $value );
 
-			if ( ! GFCommon::is_numeric( $value, 'decimal_dot' ) ) {
-				return false;
+			if ( ! GFCommon::is_numeric( $value, $number_format ) ) {
+
+				$is_valid_number['result'] = false;
+				return $is_valid_number;
 			}
 
-			if ( ( is_numeric( $min ) && $value < $min ) ||
-				 ( is_numeric( $max ) && $value > $max ) ) {
-				return false;
+
+			if ( ( is_numeric( $isNumberRangeMin ) && $value < $isNumberRangeMin ) ||
+				 ( is_numeric( $isNumberRangeMax ) && $value > $isNumberRangeMax ) ) {
+
+				$is_valid_number['result'] = false;
+				$is_valid_number['result_min'] = $isNumberRangeMin;
+				$is_valid_number['result_max'] = $isNumberRangeMax;
+
 			} else {
-				return true;
+				if ( ! is_null( $isNumberRangeMin ) && '' !== $isNumberRangeMin ) {
+					$list_values = maybe_unserialize( RGFormsModel::get_field_value( $field ) );  // get the value of the field
+
+					foreach ( $list_values as $row ) {
+						$result = $this->get_row_formula_result( $isNumberRangeMin, $field, $row );
+
+						if ( $result && $value < $result ) {
+
+							$is_valid_number['result'] = false;
+							$is_valid_number['result_min'] = $result;
+
+						}
+					}
+				}
+
+				if ( ! is_null( $isNumberRangeMax ) && '' !== $isNumberRangeMax ) {
+					$list_values = maybe_unserialize( RGFormsModel::get_field_value( $field ) );  // get the value of the field
+
+					foreach ( $list_values as $row ) {
+						$result = $this->get_row_formula_result( $isNumberRangeMax, $field, $row );
+
+						if ( $result && $value > $result ) {
+
+							$is_valid_number['result'] = false;
+							$is_valid_number['result_max'] = $result;
+
+						}
+
+					}
+				}
 			}
+
+			return $is_valid_number;
+
 		} // END is_valid_number
 
-		// get string representation of number format
-		function get_number_format_text( $number_format ) {
-			$number_format_text = '';
+		function get_row_formula_result( $formula, $field, $row ) {
+			// replace multiple spaces and new lines with single space
+			$formula = trim( preg_replace( '/\s+/', ' ', $formula ) );
 
-			switch ( $number_format ) {
-				case 'decimal_comma' :
-					$number_format_text = '9.999,99';
-					break;
-				case 'currency' :
-					$number = '9999.99';
-					$currency = new RGCurrency( GFCommon::get_currency() );
-					$number_format_text = $currency->to_money( $number );
-					break;
-				default :
-				// case 'decimal_dot' :
-					$number_format_text = '9,999.99';
-					break;
+			// get field matches out of formula
+			preg_match_all( '/{[^{]*?:(\d+)\.?(\d+)?}/mi', $formula, $matches, PREG_SET_ORDER );
+
+			if ( is_array( $matches ) ) {
+
+				foreach ( $matches as $match ) {
+					$field_id = $match[1];
+					$column_number = $match[2];
+					$column_number_key = $column_number - 1;
+
+					$column_title = rgars( $field->choices, "{$column_number_key}/text" );
+
+					$match_value = GFCommon::to_number( $row[ $column_title ] ); //value from total column
+						if ( ! $match_value ) {
+							$match_value = 0;
+						}
+
+					$formula = str_replace( $match[0], $match_value, $formula ); // replace field with value
+
 				}
-				return $number_format_text;
-		} // END get_number_format_text
+
+				// check that formula is valid expression, e.g. 1 + 2 ( 3 + 4 )
+				if( preg_match( '/^[0-9 -\/*\(\)]+$/', $formula ) ) {
+					$result = eval( "return {$formula};" );
+					return $result;
+				} else {
+					return false;
+				}
+			}
+		}
 
 		// get range message - used below each input if a min and/or max has been specified for the column
-		function get_range_message( $min, $max ) {
+		function get_input_range_message( $isNumberRangeMin, $isNumberRangeMax ) {
 			$message = '';
 
-			if ( is_numeric( $min ) && is_numeric( $max ) ) {
-				$message = sprintf( esc_html__( 'Please enter a value between %s and %s.', 'list-field-number-format-for-gravity-forms' ), "<strong>$min</strong>", "<strong>$max</strong>" );
-			} elseif ( is_numeric( $min ) ) {
-				$message = sprintf( esc_html__( 'Please enter a value greater than or equal to %s.', 'list-field-number-format-for-gravity-forms' ), "<strong>$min</strong>" );
-			} elseif ( is_numeric( $max ) ) {
-				$message = sprintf( esc_html__( 'Please enter a value less than or equal to %s.', 'list-field-number-format-for-gravity-forms' ), "<strong>$max</strong>" );
+			if ( is_numeric( $isNumberRangeMin ) && is_numeric( $isNumberRangeMax ) ) {
+				$message = sprintf( esc_html__( 'Please enter a value between %s and %s.', 'list-field-number-format-for-gravity-forms' ), "<strong>{$isNumberRangeMin}</strong>", "<strong>{$isNumberRangeMax}</strong>" );
+			} elseif ( is_numeric( $isNumberRangeMin ) ) {
+				$message = sprintf( esc_html__( 'Please enter a value greater than or equal to %s.', 'list-field-number-format-for-gravity-forms' ), "<strong>{$isNumberRangeMin}</strong>" );
+			} elseif ( is_numeric( $isNumberRangeMax ) ) {
+				$message = sprintf( esc_html__( 'Please enter a value less than or equal to %s.', 'list-field-number-format-for-gravity-forms' ), "<strong>{$isNumberRangeMax}</strong>" );
 			}
 
 			return $message;
-		} // END get_range_message
+		} // END get_input_range_message
 
 		// create validation message for single-column list field
-		function get_validation_range_message( $min, $max ) {
+		function get_validation_range_message( $isNumberRangeMin, $isNumberRangeMax, $isNumberFormat ) {
 			$message = '';
 
-			if ( is_numeric( $min ) && is_numeric( $max ) ) {
-				$message = sprintf( esc_html__( "Requires a value between %s and %s.", 'list-field-number-format-for-gravity-forms' ), "<strong>{$min}</strong>", "<strong>{$max}</strong>" );
-			} elseif ( is_numeric( $min ) ) {
-				$message = sprintf( esc_html__( "Requires a value greater than or to %s.", 'list-field-number-format-for-gravity-forms' ), "<strong>{$min}</strong>" );
-			} elseif ( is_numeric( $max ) ) {
-				$message = sprintf( esc_html__( "Requires a value less than or to %s.", 'list-field-number-format-for-gravity-forms' ), "<strong>{$max}</strong>" );
-			} elseif ( $this->failed_validation ) {
-				$message = esc_html__( 'Please enter a valid number', 'list-field-number-format-for-gravity-forms' );
+			if ( is_numeric( $isNumberRangeMin ) && is_numeric( $isNumberRangeMax ) ) {
+				$message = sprintf( esc_html__( "Requires a value between %s and %s.", 'list-field-number-format-for-gravity-forms' ), "<strong>{$this->get_formatted_value( $isNumberRangeMin, $isNumberFormat )}</strong>", "<strong>{$this->get_formatted_value( $isNumberRangeMax, $isNumberFormat )}</strong>" );
+			} elseif ( is_numeric( $isNumberRangeMin ) ) {
+				$message = sprintf( esc_html__( "Requires a value greater than or equal to %s.", 'list-field-number-format-for-gravity-forms' ), "<strong>{$this->get_formatted_value( $isNumberRangeMin, $isNumberFormat )}</strong>" );
+			} elseif ( is_numeric( $isNumberRangeMax ) ) {
+				$message = sprintf( esc_html__( "Requires a value less than or equal to %s.", 'list-field-number-format-for-gravity-forms' ), "<strong>{$this->get_formatted_value( $isNumberRangeMax, $isNumberFormat )}</strong>" );
+			} else {
+				$message = esc_html__( 'Check number is valid.', 'list-field-number-format-for-gravity-forms' );
 			}
 
 			return $message;
 		} // END get_validation_range_message
 
 		// create validation message for multi-column list field
-		function get_column_validation_range_message( $column_title, $min, $max ) {
+		function get_column_validation_range_message( $column_title = '', $isNumberRangeMin, $isNumberRangeMax, $isNumberFormat ) {
 			$message = '';
 
-			if ( is_numeric( $min ) && is_numeric( $max ) ) {
-				$message = sprintf( esc_html__( "The column '%s' requires a value between %s and %s.", 'list-field-number-format-for-gravity-forms' ), $column_title, "<strong>{$min}</strong>", "<strong>{$max}</strong>" );
-			} elseif ( is_numeric( $min ) ) {
-				$message = sprintf( esc_html__( "The column '%s' requires a value greater than or to %s.", 'list-field-number-format-for-gravity-forms' ), $column_title, "<strong>{$min}</strong>" );
-			} elseif ( is_numeric( $max ) ) {
-				$message = sprintf( esc_html__( "The column '%s' requires a value less than or to %s.", 'list-field-number-format-for-gravity-forms' ), $column_title, "<strong>{$max}</strong>" );
-			} elseif ( $this->failed_validation ) {
-				$message = esc_html__( 'Please enter a valid number', 'list-field-number-format-for-gravity-forms' );
+			if ( is_numeric( $isNumberRangeMin ) && is_numeric( $isNumberRangeMax ) ) {
+				$message = sprintf( esc_html__( "The column '%s' requires a value between %s and %s.", 'list-field-number-format-for-gravity-forms' ), $column_title, "<strong>{$this->get_formatted_value( $isNumberRangeMin, $isNumberFormat )}</strong>", "<strong>{$this->get_formatted_value( $isNumberRangeMax, $isNumberFormat )}</strong>" );
+			} elseif ( is_numeric( $isNumberRangeMin ) ) {
+				$message = sprintf( esc_html__( "The column '%s' requires a value greater than or equal to %s.", 'list-field-number-format-for-gravity-forms' ), $column_title, "<strong>{$this->get_formatted_value( $isNumberRangeMin, $isNumberFormat )}</strong>" );
+			} elseif ( is_numeric( $isNumberRangeMax ) ) {
+				$message = sprintf( esc_html__( "The column '%s' requires a value less than or equal to %s.", 'list-field-number-format-for-gravity-forms' ), $column_title, "<strong>{$this->get_formatted_value( $isNumberRangeMax, $isNumberFormat )}</strong>" );
+			} else {
+				$message = esc_html__( "Check number is valid.", 'list-field-number-format-for-gravity-forms' );
 			}
 
 			return $message;
 		} // END get_column_validation_range_message
 
 		// converts formatted number to standard number
-		function get_clean_column_value( $value, $number_format ) {
+		function get_clean_value( $value, $number_format ) {
 			$value = trim( $value );
 			if ( 'currency' == $number_format ) {
 				$currency = new RGCurrency( GFCommon::get_currency() );
@@ -503,22 +833,22 @@ if ( class_exists( 'GFForms' ) ) {
 			}
 
 			return $value;
-		} // END get_clean_column_value
+		} // END get_clean_value
 
 		// check that number provided is in the correct format - used in validation
-		function is_valid_format_column_value( $value, $number_format ) {
+		function is_column_value_valid_format( $value, $number_format ) {
 			$value = GFCommon::maybe_add_leading_zero( $value );
 
 			$requires_valid_number = ! rgblank( $value );
 
-			$is_valid_number = GFCommon::is_numeric( $value, $number_format );
+			$is_numeric = GFCommon::is_numeric( $value, $number_format );
 
-			if ( $requires_valid_number && ! $is_valid_number ) {
+			if ( $requires_valid_number && ! $is_numeric ) {
 				return false;
 			} else {
 				return true;
 			}
-		} // END is_valid_format_column_value
+		} // END is_column_value_valid_format
 
 		/*
          * Check if list field has a number format field
@@ -530,7 +860,7 @@ if ( class_exists( 'GFForms' ) ) {
 						$has_columns = is_array( $field->choices );
 						if ( $has_columns ) {
 							foreach( $field['choices'] as $choice ) {
-								if ( true  == rgar( $choice, 'isNumber' ) )  {
+								if ( rgar( $choice, 'isNumber' ) )  {
 									return true;
 								}
 							}
