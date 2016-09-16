@@ -2,7 +2,7 @@
 /*
 Plugin Name: List Field Number Format for Gravity Forms
 Description: Turn your list field columns into repeatable number fields
-Version: 1.1.0
+Version: 1.1.1
 Author: Adrian Gordon
 Author URI: http://www.itsupportguides.com
 License: GPL2
@@ -637,7 +637,7 @@ if ( class_exists( 'GFForms' ) ) {
 						$has_columns = is_array( $field->choices );
 						if ( $has_columns ) { // row calculations only apply to multi-column list fields
 							$list_values = maybe_unserialize( RGFormsModel::get_field_value( $field ) );  // get the value of the field
-							$submit_value = []; // we'll be storing the submit value as an array for passing via POST
+							$submit_value = array(); // we'll be storing the submit value as an array for passing via POST
 							foreach ( $list_values as $row ) { // get each row
 								foreach ( $field['choices'] as $key => $choice ) { // for each column
 									$column = rgars( $field->choices, "{$key}/text" ); // we'll be using the column label as the key
@@ -675,7 +675,7 @@ if ( class_exists( 'GFForms' ) ) {
 
 		// check is value provided is value, compared to number format and min/max range - used in validation
 		function is_valid_number( $value, $number_format, $isNumberRangeMin, $isNumberRangeMax, $field ) {
-			$is_valid_number= []; // we'll be returning the result along with evaluated range details as an array
+			$is_valid_number= array(); // we'll be returning the result along with evaluated range details as an array
 			$is_valid_number['result'] = true;
 			$is_valid_number['result_min'] = null;
 			$is_valid_number['result_max'] = null;

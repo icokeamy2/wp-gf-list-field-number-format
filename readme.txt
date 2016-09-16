@@ -4,7 +4,7 @@ Donate link: http://www.itsupportguides.com/
 Tags: Gravity Forms, forms, online forms, select, list
 Requires at least: 4.5.3
 Tested up to: 4.6.1
-Stable tag: 1.1.0
+Stable tag: 1.1.1
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -65,6 +65,9 @@ Please take the time to review the plugin. Your feedback is important and will h
 1. Shows the number format options in the forms editor.
 
 == Changelog ==
+
+= 1.1.1 =
+Fix: Improve support for older versions of PHP (version 5.3) "Parse error: syntax error, unexpected ["
 
 = 1.1.0 =
 * Feature: calculate column values uing a formula (e.g. field = column 1 + column 2)
