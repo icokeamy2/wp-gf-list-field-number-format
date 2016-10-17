@@ -1,7 +1,7 @@
 === List Field Number Format for Gravity Forms ===
 Contributors: ovann86
 Donate link: http://www.itsupportguides.com/
-Tags: Gravity Forms, forms, online forms, select, list
+Tags: Gravity Forms, forms, online forms, select, list, numbers, math
 Requires at least: 4.5.3
 Tested up to: 4.6.1
 Stable tag: 1.1.1
