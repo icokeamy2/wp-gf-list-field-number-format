@@ -2,7 +2,7 @@
 /*
 Plugin Name: List Field Number Format for Gravity Forms
 Description: Turn your list field columns into repeatable number fields
-Version: 1.1.1
+Version: 1.1.2
 Author: Adrian Gordon
 Author URI: http://www.itsupportguides.com
 License: GPL2
@@ -64,7 +64,7 @@ if ( class_exists( 'GFForms' ) ) {
 
     class ITSG_GF_ListField_Number_Format extends GFAddOn {
 
-        protected $_version = '1.1.0';
+        protected $_version = '1.1.2';
         protected $_min_gravityforms_version = '1.9.15';
         protected $_slug = 'list-field-number-format-for-gravity-forms';
         protected $_full_path = __FILE__;
@@ -618,10 +618,9 @@ if ( class_exists( 'GFForms' ) ) {
 									$number_format_text = $this->get_formatted_value( $total, $isNumberFormat );
 									$column_label = rgars( $field->choices, "{$key}/text" ); // we'll be using the column label as the key
 									$array[ $column_label ] = "<div style='border-top: medium double; border-bottom: 1px solid;'><strong>{$number_format_text}</strong></div>";
+									array_push( $values, $array ); // add row to submit value array
 								}
 							}
-
-							array_push( $values, $array ); // add row to submit value array
 						}
 					$value = serialize( $values );
 				}

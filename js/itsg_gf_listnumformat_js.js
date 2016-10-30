@@ -271,6 +271,8 @@ function itsg_setup_total_columns( field, form_id, field_id, field_column, isNum
 			jQuery( '#field_' + form_id + '_' + field_id + ' table tbody tr:last-child' ).find( 'input:not(.isNumberColumnTotal), select:not(.isNumberColumnTotal), .gfield_list_icons img' ).parent().empty();
 			jQuery( '#field_' + form_id + '_' + field_id + ' table tbody tr:last-child' ).find( '.gfield_list_' + field_id + '_cell' + field_column ).removeClass( 'gfield_list_' + field_id + '_cell' + field_column );
 			jQuery( '#field_' + form_id + '_' + field_id + ' table tbody tr:last-child' ).find( 'input' ).prop( 'readonly', true ).removeAttr( 'tabindex' ).removeAttr( 'name' );
+			// remove any field instructions
+			jQuery( '#field_' + form_id + '_' + field_id + ' table tbody tr:last-child' ).find( 'input.isNumberColumnTotal' ).next( 'div.instruction' ).empty();
 			// add isNumberColumnTotalRow class to table
 			jQuery( '#field_' + form_id + '_' + field_id + ' table' ).addClass( 'isNumberColumnTotalRow' );
 
