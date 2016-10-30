@@ -265,16 +265,16 @@ function itsg_setup_total_columns( field, form_id, field_id, field_column, isNum
 	if ( 'true' == isNumberColumnTotal ) {
 
 		// if list field does not already have a total row
-		if ( ! jQuery( '#field_' + form_id + '_' + field_id + ' table tbody tr:last-child' ).hasClass( 'isNumberColumnTotalRow' ) ) {
+		if ( ! jQuery( '#field_' + form_id + '_' + field_id + ' div.ginput_container table tbody tr:last-child' ).hasClass( 'isNumberColumnTotalRow' ) ) {
 			// SETUP THE TOTAL ROW AND FIELDS : clone last row - add isNumberColumnTotalRow class, remove non isNumberColumnTotal inputs and repeat icons, set remaining inputs to readonly and remove tabindex attribute
-			jQuery( '#field_' + form_id + '_' + field_id + ' table tbody tr:last-child' ).clone().insertAfter( '#field_' + form_id + '_' + field_id + ' table tbody tr:last-child' ).addClass( 'isNumberColumnTotalRow' ).removeClass( 'gfield_list_group gfield_list_row_odd gfield_list_row_even' );
-			jQuery( '#field_' + form_id + '_' + field_id + ' table tbody tr:last-child' ).find( 'input:not(.isNumberColumnTotal), select:not(.isNumberColumnTotal), .gfield_list_icons img' ).parent().empty();
-			jQuery( '#field_' + form_id + '_' + field_id + ' table tbody tr:last-child' ).find( '.gfield_list_' + field_id + '_cell' + field_column ).removeClass( 'gfield_list_' + field_id + '_cell' + field_column );
-			jQuery( '#field_' + form_id + '_' + field_id + ' table tbody tr:last-child' ).find( 'input' ).prop( 'readonly', true ).removeAttr( 'tabindex' ).removeAttr( 'name' );
+			jQuery( '#field_' + form_id + '_' + field_id + ' div.ginput_container table tbody tr:last-child' ).clone().insertAfter( '#field_' + form_id + '_' + field_id + ' div.ginput_container table tbody tr:last-child' ).addClass( 'isNumberColumnTotalRow' ).removeClass( 'gfield_list_group gfield_list_row_odd gfield_list_row_even' );
+			jQuery( '#field_' + form_id + '_' + field_id + ' div.ginput_container table tbody tr:last-child' ).find( 'input:not(.isNumberColumnTotal), select:not(.isNumberColumnTotal), .gfield_list_icons img' ).parent().empty();
+			jQuery( '#field_' + form_id + '_' + field_id + ' div.ginput_container table tbody tr:last-child' ).find( '.gfield_list_' + field_id + '_cell' + field_column ).removeClass( 'gfield_list_' + field_id + '_cell' + field_column );
+			jQuery( '#field_' + form_id + '_' + field_id + ' div.ginput_container table tbody tr:last-child' ).find( 'input' ).prop( 'readonly', true ).removeAttr( 'tabindex' ).removeAttr( 'name' );
 			// remove any field instructions
-			jQuery( '#field_' + form_id + '_' + field_id + ' table tbody tr:last-child' ).find( 'input.isNumberColumnTotal' ).next( 'div.instruction' ).empty();
+			jQuery( '#field_' + form_id + '_' + field_id + ' div.ginput_container table tbody tr:last-child' ).find( 'input.isNumberColumnTotal' ).next( 'div.instruction' ).empty();
 			// add isNumberColumnTotalRow class to table
-			jQuery( '#field_' + form_id + '_' + field_id + ' table' ).addClass( 'isNumberColumnTotalRow' );
+			jQuery( '#field_' + form_id + '_' + field_id + ' div.ginput_container table' ).addClass( 'isNumberColumnTotalRow' );
 
 			// run calculation
 			var field = jQuery( '.gfield_list_' + field_id + '_cell' + field_column +' input' );
@@ -356,7 +356,7 @@ function calc_column_total( field, form_id, field_id, field_column, isNumberForm
 		});
 		total_value = itsg_format_number_field( total_value, isNumberFormat, isNumberRounding, decimalSeparator, thousandSeparator, isNumberFixedPoint, isNumberRoundingDirection );
 	}
-	jQuery( '#field_' + form_id + '_' + field_id + ' tr.isNumberColumnTotalRow' ).find( 'td:nth-child(' + field_column + ') input' ).val( total_value );
+	jQuery( '#field_' + form_id + '_' + field_id + ' div.ginput_container table tr.isNumberColumnTotalRow' ).find( 'td:nth-child(' + field_column + ') input' ).val( total_value );
 }
 
 function itsg_format_number_field( value, isNumberFormat, isNumberRounding, decimalSeparator, thousandSeparator, isNumberFixedPoint, isNumberRoundingDirection ) {

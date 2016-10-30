@@ -4,7 +4,7 @@ Donate link: http://www.itsupportguides.com/
 Tags: Gravity Forms, forms, online forms, select, list, numbers, math
 Requires at least: 4.5.3
 Tested up to: 4.6.1
-Stable tag: 1.1.2
+Stable tag: 1.1.3
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -65,6 +65,9 @@ Please take the time to review the plugin. Your feedback is important and will h
 1. Shows the number format options in the forms editor.
 
 == Changelog ==
+
+= 1.1.3 =
+Fix: Improve support for tables inside of field descriptions.
 
 = 1.1.2 =
 Fix: Resolve issue with range instructions appearing in total row/column if both range instructions (e.g. Number must be between x and x) and total column enabled.
