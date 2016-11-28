@@ -4,7 +4,7 @@ Donate link: http://www.itsupportguides.com/
 Tags: Gravity Forms, forms, online forms, select, list, numbers, math
 Requires at least: 4.5.3
 Tested up to: 4.6.1
-Stable tag: 1.1.3
+Stable tag: 1.1.4
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -66,15 +66,19 @@ Please take the time to review the plugin. Your feedback is important and will h
 
 == Changelog ==
 
+= 1.1.4 =
+* Fix: Resolve issue with row calculations based on french notation numbers (9.999,99).
+* Fix: Resolve issue field format not correctly setting when new row is added.
+
 = 1.1.3 =
-Fix: Improve support for tables inside of field descriptions.
+* Fix: Improve support for tables inside of field descriptions.
 
 = 1.1.2 =
-Fix: Resolve issue with range instructions appearing in total row/column if both range instructions (e.g. Number must be between x and x) and total column enabled.
-Fix: Resolve 'undefined variable' error when submitting a form that does not include a total column.
+* Fix: Resolve issue with range instructions appearing in total row/column if both range instructions (e.g. Number must be between x and x) and total column enabled.
+* Fix: Resolve 'undefined variable' error when submitting a form that does not include a total column.
 
 = 1.1.1 =
-Fix: Improve support for older versions of PHP (version 5.3) "Parse error: syntax error, unexpected ["
+* Fix: Improve support for older versions of PHP (version 5.3) "Parse error: syntax error, unexpected ["
 
 = 1.1.0 =
 * Feature: calculate column values uing a formula (e.g. field = column 1 + column 2)

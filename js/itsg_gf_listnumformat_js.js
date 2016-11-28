@@ -64,10 +64,10 @@ function itsg_setup_row_calculations( field, form_id, field_id, field_column, is
 	var destination_column = obj[ field_column ]['isNumberEnableCalculation'];
 	if ( undefined != destination_column ) {
 		field.bind( 'change', {
-		field_id : field_id,
-		field_column : field_column,
-		destination_column : destination_column,
-		destination_forumla : obj[ destination_column ]['isNumberCalculationFormula'],
+			field_id : field_id,
+			field_column : field_column,
+			destination_column : destination_column,
+			destination_forumla : obj[ destination_column ]['isNumberCalculationFormula'],
 		}, function( event ) {
 			var field_id = event.data.field_id;
 			var field_column = event.data.field_column;
@@ -101,9 +101,12 @@ function itsg_setup_row_calculations( field, form_id, field_id, field_column, is
 				var destination_forumla = destination_forumla.replace( matches[ i ][0], value );
 
 			}
-
+			
 			// evaluate the formula and set the value
-			destination_field.not( this ).val( eval( destination_forumla ) ).trigger( 'change' );
+			var value = itsg_format_number_field( eval( destination_forumla ), isNumberFormat, isNumberRounding, decimalSeparator, thousandSeparator, isNumberFixedPoint, isNumberRoundingDirection );
+			
+			destination_field.not( this ).val( value ).trigger( 'change' );
+
 		});
 	}
 }
@@ -293,10 +296,14 @@ function itsg_gf_list_number_format_newrow( new_row, row ){
 		var field = jQuery( this );
 		var field_column = field.parent( 'td.gfield_list_cell' ).index() + 1;
 		var number_format_fields = itsg_gf_listnumformat_js_settings.number_format_fields;
-		var isNumberFormat = number_format_fields[ field_id ][ field_column ].isNumberFormat;
-		var isNumberRounding = number_format_fields[ field_id ][ field_column ].isNumberRounding;
-		var isNumberFixedPoint = number_format_fields[ field_id ][ field_column ].isNumberFixedPoint;
-		var isNumberRoundingDirection = number_format_fields[ field_id ][ field_column ].isNumberRoundingDirection;
+		//var isNumberFormat = number_format_fields[ field_id ][ field_column ].isNumberFormat;
+		var isNumberFormat = typeof 'undefined' !== number_format_fields[ field_id ][ field_column ]['isNumberFormat'] ? number_format_fields[ field_id ][ field_column ]['isNumberFormat'] : 'decimal_dot';
+		//var isNumberRounding = number_format_fields[ field_id ][ field_column ].isNumberRounding;
+		var isNumberRounding = ( typeof 'undefined' == number_format_fields[ field_id ][ field_column ]['isNumberRounding'] || 'norounding' == number_format_fields[ field_id ][ field_column ]['isNumberRounding'] ) ? -1 : parseInt( number_format_fields[ field_id ][ field_column ]['isNumberRounding'] );
+		//var isNumberFixedPoint = number_format_fields[ field_id ][ field_column ].isNumberFixedPoint;
+		var isNumberFixedPoint = typeof 'undefined' !== number_format_fields[ field_id ][ field_column ]['isNumberFixedPoint'] ? number_format_fields[ field_id ][ field_column ]['isNumberFixedPoint'] : false;
+		//var isNumberRoundingDirection = number_format_fields[ field_id ][ field_column ].isNumberRoundingDirection;
+		var isNumberRoundingDirection = typeof 'undefined' !== number_format_fields[ field_id ][ field_column ]['isNumberRoundingDirection'] ? number_format_fields[ field_id ][ field_column ]['isNumberRoundingDirection'] : 'roundclosest';
 
 		var decimalSeparator = '.';
 		var thousandSeparator = ',';
@@ -328,8 +335,8 @@ function gformInitListNumberFormatFields( field, form_id, field_id, field_column
 			var $this = jQuery(this);
 			if ( '' != $this.val() && '0' != $this.val() ) {
 				var value = $this.val();
-				value = itsg_format_number_field( value, isNumberFormat, isNumberRounding, decimalSeparator, thousandSeparator, isNumberFixedPoint, isNumberRoundingDirection );
-
+				var clean_value = itsg_clean_number( value, isNumberRounding, decimalSeparator, thousandSeparator, isNumberFixedPoint, isNumberRoundingDirection );
+				var value = itsg_format_number_field( clean_value, isNumberFormat, isNumberRounding, decimalSeparator, thousandSeparator, isNumberFixedPoint, isNumberRoundingDirection );
 				$this.val( value ).trigger( 'keyup' );
 			}
 		});
@@ -359,25 +366,23 @@ function calc_column_total( field, form_id, field_id, field_column, isNumberForm
 	jQuery( '#field_' + form_id + '_' + field_id + ' div.ginput_container table tr.isNumberColumnTotalRow' ).find( 'td:nth-child(' + field_column + ') input' ).val( total_value );
 }
 
-function itsg_format_number_field( value, isNumberFormat, isNumberRounding, decimalSeparator, thousandSeparator, isNumberFixedPoint, isNumberRoundingDirection ) {
+function itsg_format_number_field( clean_value, isNumberFormat, isNumberRounding, decimalSeparator, thousandSeparator, isNumberFixedPoint, isNumberRoundingDirection ) {
 	// catch any undefined values
-	if ( undefined == value ) {
-		value = 0;
+	if ( undefined == clean_value ) {
+		clean_value = 0;
 	}
 
-	if ( 0 == value.length ) {
-		value = 0;
+	if ( 0 == clean_value.length ) {
+		clean_value = 0;
 	}
 
-	value = value.toString(); // convert to string in case number passed
+	clean_value = clean_value.toString(); // convert to string in case number passed
 
-	var value_decimal = ( value.split( decimalSeparator )[1] || [] ).length; // get the number of decimal places
+	var value_decimal = ( clean_value.split( '.' )[1] || [] ).length; // get the number of decimal places
 
 	if ( -1 == isNumberRounding ) {
-		isNumberRounding = ( value.split( decimalSeparator )[1] || [] ).length; // get the number of decimal places
+		isNumberRounding = ( clean_value.split( '.' )[1] || [] ).length; // get the number of decimal places
 	}
-
-	var clean_value = itsg_clean_number( value, isNumberRounding, decimalSeparator, thousandSeparator, isNumberFixedPoint, isNumberRoundingDirection );
 
 	if ( 'currency' == isNumberFormat ){
 		value = gformFormatMoney( clean_value );
