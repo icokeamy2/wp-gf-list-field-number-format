@@ -290,8 +290,13 @@ function itsg_gf_list_number_format_newrow( new_row, row ){
 	//var field_details = row.parents( 'table.gfield_list_container' ).prev( 'input' ).attr('id').split( '_' );
 	//var field_id = field_details[ field_details.length - 2 ];
 	//var field_id = row.parents( 'table.gfield_list_container' ).prev( 'input' ).attr('id').split( '_' ).pop().trim().replace( '[]', '');
-	var field_details = row.parents( 'li.gfield' ).attr('id').split( '_' );
-	var field_id = field_details[ field_details.length - 1 ];
+	if ( itsg_gf_listnumformat_js_settings.is_entry_detail ) {
+		var field_details = row.parents( 'table.gfield_list_container' ).prev( 'input' ).attr('id').split( '_' );
+		var field_id = field_details[ field_details.length - 2 ];
+	} else {
+		var field_details = row.parents( 'li.gfield' ).attr('id').split( '_' );
+		var field_id = field_details[ field_details.length - 1 ];
+	}
 	var form_id = itsg_gf_listnumformat_js_settings.form_id;
 
 	new_row.find( '.gfield_list_cell input.decimal_dot, .gfield_list_cell input.decimal_comma, .gfield_list_cell input.currency' ).each(function() {
