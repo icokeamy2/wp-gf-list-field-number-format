@@ -3,7 +3,7 @@ Contributors: ovann86
 Donate link: http://www.itsupportguides.com/
 Tags: Gravity Forms, forms, online forms, select, list, numbers, math
 Requires at least: 4.5.3
-Tested up to: 4.6.1
+Tested up to: 4.7.0
 Stable tag: 1.1.6
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -12,7 +12,7 @@ Turn your list field columns into repeatable number fields
 
 == Description ==
 
-> This plugin is an add-on for the <a href="https://www.e-junkie.com/ecom/gb.php?cl=54585&c=ib&aff=299380" target="_blank">Gravity Forms</a> (affiliate link) plugin. If you don't yet own a license go and <a href="https://www.e-junkie.com/ecom/gb.php?cl=54585&c=ib&aff=299380" target="_blank">buy one now</a>! (affiliate link)
+> This plugin is an add-on for the <a href="https://www.e-junkie.com/ecom/gb.php?cl=54585&c=ib&aff=299380" target="_blank">Gravity Forms</a> (affiliate link) plugin. If you don't yet own a license for Gravity Forms - <a href="https://www.e-junkie.com/ecom/gb.php?cl=54585&c=ib&aff=299380" target="_blank">buy one now</a>! (affiliate link)
 
 **What does this plugin do?**
 
