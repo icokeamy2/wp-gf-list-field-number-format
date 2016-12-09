@@ -101,10 +101,10 @@ function itsg_setup_row_calculations( field, form_id, field_id, field_column, is
 				var destination_forumla = destination_forumla.replace( matches[ i ][0], value );
 
 			}
-			
+
 			// evaluate the formula and set the value
 			var value = itsg_format_number_field( eval( destination_forumla ), isNumberFormat, isNumberRounding, decimalSeparator, thousandSeparator, isNumberFixedPoint, isNumberRoundingDirection );
-			
+
 			destination_field.not( this ).val( value ).trigger( 'change' );
 
 		});
@@ -268,16 +268,17 @@ function itsg_setup_total_columns( field, form_id, field_id, field_column, isNum
 	if ( 'true' == isNumberColumnTotal ) {
 
 		// if list field does not already have a total row
-		if ( ! jQuery( '#field_' + form_id + '_' + field_id + ' div.ginput_container table tbody tr:last-child' ).hasClass( 'isNumberColumnTotalRow' ) ) {
+		if ( ! jQuery( '#field_' + form_id + '_' + field_id + ' div.ginput_container table tbody:last-of-type tr:last-child' ).hasClass( 'isNumberColumnTotalRow' ) ) {
 			// SETUP THE TOTAL ROW AND FIELDS : clone last row - add isNumberColumnTotalRow class, remove non isNumberColumnTotal inputs and repeat icons, set remaining inputs to readonly and remove tabindex attribute
-			jQuery( '#field_' + form_id + '_' + field_id + ' div.ginput_container table tbody tr:last-child' ).clone().insertAfter( '#field_' + form_id + '_' + field_id + ' div.ginput_container table tbody tr:last-child' ).addClass( 'isNumberColumnTotalRow' ).removeClass( 'gfield_list_group gfield_list_row_odd gfield_list_row_even' );
-			jQuery( '#field_' + form_id + '_' + field_id + ' div.ginput_container table tbody tr:last-child' ).find( 'input:not(.isNumberColumnTotal), select:not(.isNumberColumnTotal), .gfield_list_icons img' ).parent().empty();
-			jQuery( '#field_' + form_id + '_' + field_id + ' div.ginput_container table tbody tr:last-child' ).find( '.gfield_list_' + field_id + '_cell' + field_column ).removeClass( 'gfield_list_' + field_id + '_cell' + field_column );
-			jQuery( '#field_' + form_id + '_' + field_id + ' div.ginput_container table tbody tr:last-child' ).find( 'input' ).prop( 'readonly', true ).removeAttr( 'tabindex' ).removeAttr( 'name' );
+			jQuery( '#field_' + form_id + '_' + field_id + ' div.ginput_container table tbody tr:last-child' ).clone().insertAfter( '#field_' + form_id + '_' + field_id + ' div.ginput_container table tbody' ).addClass( 'isNumberColumnTotalRow' ).removeClass( 'gfield_list_group gfield_list_row_odd gfield_list_row_even' ).wrap( '<tbody>' );
+			var total_row = jQuery( '#field_' + form_id + '_' + field_id + ' div.ginput_container table tbody tr.isNumberColumnTotalRow' );
+			total_row.find( 'input:not(.isNumberColumnTotal), select:not(.isNumberColumnTotal), .gfield_list_icons img' ).parent().empty();
+			total_row.find( '.gfield_list_' + field_id + '_cell' + field_column ).removeClass( 'gfield_list_' + field_id + '_cell' + field_column );
+			total_row.find( 'input' ).prop( 'readonly', true ).removeAttr( 'tabindex' ).removeAttr( 'name' );
 			// remove any field instructions
-			jQuery( '#field_' + form_id + '_' + field_id + ' div.ginput_container table tbody tr:last-child' ).find( 'input.isNumberColumnTotal' ).next( 'div.instruction' ).empty();
+			total_row.find( 'input.isNumberColumnTotal' ).next( 'div.instruction' ).empty();
 			// add isNumberColumnTotalRow class to table
-			jQuery( '#field_' + form_id + '_' + field_id + ' div.ginput_container table' ).addClass( 'isNumberColumnTotalRow' );
+			jQuery( '#field_' + form_id + '_' + field_id + ' div.ginput_container table' ).addClass( 'isNumberColumnTotalRow ' );
 
 			// run calculation
 			var field = jQuery( '.gfield_list_' + field_id + '_cell' + field_column +' input' );
