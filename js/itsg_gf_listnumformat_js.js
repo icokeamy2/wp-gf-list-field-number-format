@@ -290,7 +290,7 @@ function itsg_gf_list_number_format_newrow( new_row, row ){
 	//var field_details = row.parents( 'table.gfield_list_container' ).prev( 'input' ).attr('id').split( '_' );
 	//var field_id = field_details[ field_details.length - 2 ];
 	//var field_id = row.parents( 'table.gfield_list_container' ).prev( 'input' ).attr('id').split( '_' ).pop().trim().replace( '[]', '');
-	if ( itsg_gf_listnumformat_js_settings.is_entry_detail ) {
+	if ( '1' == itsg_gf_listnumformat_js_settings.is_entry_detail ) {
 		var field_details = row.parents( 'table.gfield_list_container' ).prev( 'input' ).attr('id').split( '_' );
 		var field_id = field_details[ field_details.length - 2 ];
 	} else {
