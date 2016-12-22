@@ -125,7 +125,7 @@ class ITSG_GF_isNumber_Field extends Helper_Abstract_Fields {
 
 		return $this->cache();
 	}
-	
+
 	/**
 	 * Remove empty list rows
 	 *

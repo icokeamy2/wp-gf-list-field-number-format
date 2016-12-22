@@ -19,7 +19,13 @@ function itsg_gf_list_number_format_init(){
 			var isNumberRounding = ( typeof 'undefined' == obj[ field_column ]['isNumberRounding'] || 'norounding' == obj[ field_column ]['isNumberRounding'] ) ? -1 : parseInt( obj[ field_column ]['isNumberRounding'] );
 			var isNumberRoundingDirection = typeof 'undefined' !== obj[ field_column ]['isNumberRoundingDirection'] ? obj[ field_column ]['isNumberRoundingDirection'] : 'roundclosest';
 			var isNumberFixedPoint = typeof 'undefined' !== obj[ field_column ]['isNumberFixedPoint'] ? obj[ field_column ]['isNumberFixedPoint'] : false;
+			var isNumberCalculationFormula = obj[ field_column ]['isNumberCalculationFormula'];
+
 			var field = jQuery( '.gfield_list_' + field_id + '_cell' + field_column +' input' );
+
+			//if ( ! field.length ) var field = jQuery('#input_' + form_id + '_' + field_id);
+
+			if ( ! field.length ) continue;
 
 			var decimalSeparator = '.';
 			var thousandSeparator = ',';
@@ -32,13 +38,15 @@ function itsg_gf_list_number_format_init(){
 			// disable autocomplete for isNumber fields
 			field.attr( 'autocomplete', 'off' );
 
-			console.log( 'list-field-number-format-for-gravity-forms :: field_id: ' + field_id + ' field_column: ' + field_column + ' isNumberFormat: ' + isNumberFormat + ' isNumberRounding: ' + isNumberRounding + ' isNumberFixedPoint: ' + isNumberFixedPoint + ' isNumberRoundingDirection: ' + isNumberRoundingDirection );
+			console.log( 'list-field-number-format-for-gravity-forms :: field_id: ' + field_id + ' field_column: ' + field_column + ' isNumberFormat: ' + isNumberFormat + ' isNumberRounding: ' + isNumberRounding + ' isNumberFixedPoint: ' + isNumberFixedPoint + ' isNumberRoundingDirection: ' + isNumberRoundingDirection + ' isNumberCalculationFormula: ' + isNumberCalculationFormula );
 
 			// setup isNumber fields
 
 			itsg_setup_total_columns( field, form_id, field_id, field_column, isNumberFormat, isNumberRounding, decimalSeparator, thousandSeparator, isNumberFixedPoint, isNumberRoundingDirection );
 
-			itsg_setup_row_calculations( field, form_id, field_id, field_column, isNumberFormat, isNumberRounding, decimalSeparator, thousandSeparator, isNumberFixedPoint, isNumberRoundingDirection );
+			if ( typeof 'undefined' !== isNumberCalculationFormula ) {
+				itsg_setup_row_calculations( field, form_id, field_id, field_column, isNumberFormat, isNumberRounding, decimalSeparator, thousandSeparator, isNumberFixedPoint, isNumberRoundingDirection );
+			}
 
 			gformInitListNumberFormatFields( field, form_id, field_id, field_column, isNumberFormat, isNumberRounding, decimalSeparator, thousandSeparator, isNumberFixedPoint, isNumberRoundingDirection );
 
@@ -56,31 +64,53 @@ function itsg_gf_list_number_format_init(){
 		}
 	}
 }
+/*
+destination holds formula
+check if has formula -> setup calc
+get matched fields
+add on change event
+on change,  run formula
+put result into destination
+*/
 
 function itsg_setup_row_calculations( field, form_id, field_id, field_column, isNumberFormat, isNumberRounding, decimalSeparator, thousandSeparator, isNumberFixedPoint, isNumberRoundingDirection ){
 	// setup row calculations
 	var obj  = itsg_gf_listnumformat_js_settings.number_format_fields[ field_id ];
-	// get destination column
-	var destination_column = obj[ field_column ]['isNumberEnableCalculation'];
-	if ( undefined != destination_column ) {
-		field.bind( 'change', {
-			field_id : field_id,
-			field_column : field_column,
+	var destination_column = field_column;
+	var destination_forumla = obj[ destination_column ]['isNumberCalculationFormula'];
+	var row = field.parents( 'tr.gfield_list_group:not(.isNumberColumnTotalRow)' );
+
+	// get column matches from formula
+	var patt = /{[^{]*?:(\d+(\.\d+)?)(:(.*?))?}/i;
+	var matches = getMatchGroups( destination_forumla, patt );
+
+	// for each match in formula
+	for( i in matches ) {
+
+		if( ! matches.hasOwnProperty( i ) )
+			continue;
+
+		var inputId = matches[ i ][1];
+		var fieldId = parseInt( inputId );
+
+		if ( undefined !== matches[ i ][2] ) {
+			var columnId = matches[ i ][2].substr(1);
+			var input = row.find( '.gfield_list_' + fieldId + '_cell' + columnId + ' input' );
+		} else {
+			var input = jQuery( '#input_' + form_id + '_' + fieldId );
+		}
+
+		input.bind( 'change', {
 			destination_column : destination_column,
-			destination_forumla : obj[ destination_column ]['isNumberCalculationFormula'],
+			matches : matches,
 		}, function( event ) {
-			var field_id = event.data.field_id;
-			var field_column = event.data.field_column;
-			var destination_column = event.data.destination_column;
-			var destination_forumla = event.data.destination_forumla; // get destination column formula
-			var row = jQuery( this ).parents( 'tr.gfield_list_group:not(.isNumberColumnTotalRow)' );
-			var destination_field = row.find( '.gfield_list_' + field_id + '_cell' + destination_column +' input' );
 
-			// get column matches from formula
-			var patt = /{[^{]*?:(\d+(\.\d+)?)(:(.*?))?}/i;
-			var matches = getMatchGroups( destination_forumla, patt );
+			// get fresh formula
+			var destination_forumla = obj[ destination_column ]['isNumberCalculationFormula'];
+			var matches = event.data.matches;
 
-			// for each match in formula
+			// need to repeat get value from field for each match
+			// get value from match
 			for( i in matches ) {
 
 				if( ! matches.hasOwnProperty( i ) )
@@ -88,25 +118,29 @@ function itsg_setup_row_calculations( field, form_id, field_id, field_column, is
 
 				var inputId = matches[ i ][1];
 				var fieldId = parseInt( inputId );
-				var columnId = matches[ i ][2].substr(1);
+				if ( undefined !== matches[ i ][2] ) {
+					var columnId = matches[ i ][2].substr(1);
+					var input = row.find( '.gfield_list_' + fieldId + '_cell' + columnId + ' input' );
+				} else {
+					var input = jQuery( '#input_' + form_id + '_' + fieldId );
+				}
 
-				var input = row.find( '.gfield_list_' + fieldId + '_cell' + columnId + ' input' );
-
-				// get value from match
 				var value = input.val();
 
 				value = itsg_clean_number( value, isNumberRounding, decimalSeparator, thousandSeparator, isNumberFixedPoint, isNumberRoundingDirection );
 
 				// replace match with value
-				var destination_forumla = destination_forumla.replace( matches[ i ][0], value );
+				destination_forumla = destination_forumla.replace( matches[ i ][0], value );
 
+				// check that formula is valid expression, e.g. 1 + 2 ( 3 + 4 )
+				// this helps ensure we don't try to process the formula until the all the matches are replaced
+				var r = new RegExp("^[0-9 -\/*\(\)]+$");
+
+				if ( r.test( destination_forumla ) ) {
+					var value = itsg_format_number_field( eval( destination_forumla ), isNumberFormat, isNumberRounding, decimalSeparator, thousandSeparator, isNumberFixedPoint, isNumberRoundingDirection );
+					field.val( value ).trigger( 'change' );
+				}
 			}
-
-			// evaluate the formula and set the value
-			var value = itsg_format_number_field( eval( destination_forumla ), isNumberFormat, isNumberRounding, decimalSeparator, thousandSeparator, isNumberFixedPoint, isNumberRoundingDirection );
-
-			destination_field.not( this ).val( value ).trigger( 'change' );
-
 		});
 	}
 }
@@ -312,6 +346,7 @@ function itsg_gf_list_number_format_newrow( new_row, row ){
 		var isNumberFixedPoint = typeof 'undefined' !== number_format_fields[ field_id ][ field_column ]['isNumberFixedPoint'] ? number_format_fields[ field_id ][ field_column ]['isNumberFixedPoint'] : false;
 		//var isNumberRoundingDirection = number_format_fields[ field_id ][ field_column ].isNumberRoundingDirection;
 		var isNumberRoundingDirection = typeof 'undefined' !== number_format_fields[ field_id ][ field_column ]['isNumberRoundingDirection'] ? number_format_fields[ field_id ][ field_column ]['isNumberRoundingDirection'] : 'roundclosest';
+		var isNumberCalculationFormula = number_format_fields[ field_id ][ field_column ]['isNumberCalculationFormula'];
 
 		var decimalSeparator = '.';
 		var thousandSeparator = ',';
@@ -325,7 +360,9 @@ function itsg_gf_list_number_format_newrow( new_row, row ){
 
 		itsg_setup_range( field, form_id, field_id, field_column, isNumberFormat, isNumberRounding, decimalSeparator, thousandSeparator, isNumberFixedPoint, isNumberRoundingDirection );
 
-		itsg_setup_row_calculations( field, form_id, field_id, field_column, isNumberFormat, isNumberRounding, decimalSeparator, thousandSeparator, isNumberFixedPoint, isNumberRoundingDirection );
+		if ( typeof 'undefined' !== isNumberCalculationFormula ) {
+			itsg_setup_row_calculations( field, form_id, field_id, field_column, isNumberFormat, isNumberRounding, decimalSeparator, thousandSeparator, isNumberFixedPoint, isNumberRoundingDirection );
+		}
 
 		itsg_setup_total_columns( field, form_id, field_id, field_column, isNumberFormat, isNumberRounding, decimalSeparator, thousandSeparator, isNumberFixedPoint, isNumberRoundingDirection );
 
@@ -440,9 +477,9 @@ function toFixed( num, precision ) {
 
 // takes currency, comma or decimal separated numbers - cleans and passes through GF format function
 function itsg_clean_number( value, isNumberRounding, decimalSeparator, thousandSeparator, isNumberFixedPoint, isNumberRoundingDirection ) {
-	// remove any dollar symbols or non numeric characters
 
-	var value = value.replace( /(?![.,])[\D+]/g, '' );
+	// remove any dollar symbols or non numeric characters -- allows decimal and negative symboles
+	var value = value.replace( /(?![.,-])[\D+]/g, '' );
 
 	// if decimal separator is comma (e.g. 9.999,00) convert to decimal (e.g. 9,999.99) by removing any dots and replacing comma with a dot
 	if ( ',' == decimalSeparator ) {
@@ -451,6 +488,10 @@ function itsg_clean_number( value, isNumberRounding, decimalSeparator, thousandS
 
 	// remove any commas that remain (e.g. 9,999.99 to 9999.99)
 	value = value.replace( /\,/g, '' );
+
+	if ( ! gformIsNumber( value ) ) {
+		var value = 0;
+	}
 
 	if ( 'rounddown' == isNumberRoundingDirection ) {
 		var length = create_length_number( '1', isNumberRounding );

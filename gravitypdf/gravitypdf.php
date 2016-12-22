@@ -1,6 +1,6 @@
 <?php
-	add_filter( 'gfpdf_field_class', 'decode_isnumber_gravitypdf_4_1' , 10, 3 );	
-	
+	add_filter( 'gfpdf_field_class', 'decode_isnumber_gravitypdf_4_1' , 10, 3 );
+
 	/*
 	* Add Gravity PDF 4.0 support
 	*/

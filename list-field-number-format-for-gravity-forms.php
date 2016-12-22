@@ -2,7 +2,7 @@
 /*
 Plugin Name: List Field Number Format for Gravity Forms
 Description: Turn your list field columns into repeatable number fields
-Version: 1.1.8
+Version: 1.2.0
 Author: Adrian Gordon
 Author URI: http://www.itsupportguides.com
 License: GPL2
@@ -64,7 +64,7 @@ if ( class_exists( 'GFForms' ) ) {
 
     class ITSG_GF_ListField_Number_Format extends GFAddOn {
 
-        protected $_version = '1.1.8';
+        protected $_version = '1.2.0';
         protected $_min_gravityforms_version = '1.9.15';
         protected $_slug = 'list-field-number-format-for-gravity-forms';
         protected $_full_path = __FILE__;
@@ -161,7 +161,7 @@ if ( class_exists( 'GFForms' ) ) {
 						$field_id = $field['id'];
 						$has_columns = is_array( $field->choices );
 						if ( $has_columns ) {
-							foreach( $field['choices'] as $key=>$choice ) {
+							foreach( $field['choices'] as $key => $choice ) {
 								if ( rgar( $choice, 'isNumber' ) ) {
 									$column_number = $key + 1;
 
@@ -179,28 +179,6 @@ if ( class_exists( 'GFForms' ) ) {
 
 									$isNumberColumnTotal = true == rgar( $choice, 'isNumberColumnTotal' ) ? 'true' : 'false';
 									$number_format_fields[ $field_id ][ $column_number ]['isNumberColumnTotal'] = $isNumberColumnTotal;
-
-									if ( true  == rgar( $choice, 'isNumberEnableCalculation' ) ) {
-
-										preg_match_all( '/{[^{]*?:(\d+)\.?(\d+)?}/mi', rgar( $choice, 'isNumberCalculationFormula' ), $matches, PREG_SET_ORDER );
-
-										if ( is_array( $matches ) ) {
-
-											foreach ( $matches as $match ) {
-
-												// get the $field object for the provided id
-												$field_id = $match[1];
-												$calc_column_number = $match[2];
-												$field   = RGFormsModel::get_field( $form, $field_id );
-
-												// check the field type as we only want the rest of the function to run if the field type is list
-												if ( 'list' != $field->get_input_type() ) {
-													continue;
-												}
-												$number_format_fields[ $field_id ][ $calc_column_number ]['isNumberEnableCalculation'] = $column_number;
-											}
-										}
-									}
 
 									if ( ''  !== rgar( $choice, 'isNumberCalculationFormula' ) ) {
 										$number_format_fields[ $field_id ][ $column_number ]['isNumberCalculationFormula'] = esc_js( rgar( $choice, 'isNumberCalculationFormula' ) );
@@ -488,7 +466,7 @@ if ( class_exists( 'GFForms' ) ) {
 											break;
 										}
 
-										$is_valid_number = $this->is_valid_number( $value, $isNumberFormat, $isNumberRangeMin, $isNumberRangeMax, $field );
+										$is_valid_number = $this->is_valid_number( $value, $isNumberFormat, $isNumberRangeMin, $isNumberRangeMax, $field, $form );
 
 										// check number is in correct range
 										if ( ! $is_valid_number['result'] ) {
@@ -527,7 +505,7 @@ if ( class_exists( 'GFForms' ) ) {
 										break;
 									}
 
-									$is_valid_number = $this->is_valid_number( $value, $isNumberFormat, $isNumberRangeMin, $isNumberRangeMax, $field );
+									$is_valid_number = $this->is_valid_number( $value, $isNumberFormat, $isNumberRangeMin, $isNumberRangeMax, $field, $form );
 
 									// check number is in correct range
 									if ( ! $is_valid_number['result'] ) {
@@ -646,7 +624,7 @@ if ( class_exists( 'GFForms' ) ) {
 									if ( $isNumber && $isNumberEnableCalculation && ! is_null ( $isNumberCalculationFormula ) ) {
 										$isNumberFormat = rgar( $choice, 'isNumberFormat' );
 
-										$result = $this->get_row_formula_result( $isNumberCalculationFormula, $field, $row ); // evaluate formula and return result
+										$result = $this->get_row_formula_result( $isNumberCalculationFormula, $form, $field, $row ); // evaluate formula and return result
 
 										$row[ $column ] = $this->get_formatted_value( $result, $isNumberFormat ); // store result in the row value
 									}
@@ -705,7 +683,7 @@ if ( class_exists( 'GFForms' ) ) {
 					$list_values = maybe_unserialize( RGFormsModel::get_field_value( $field ) );  // get the value of the field
 
 					foreach ( $list_values as $row ) {
-						$result = $this->get_row_formula_result( $isNumberRangeMin, $field, $row );
+						$result = $this->get_row_formula_result( $isNumberRangeMin, $form, $field, $row );
 
 						if ( $result && $value < $result ) {
 
@@ -720,7 +698,7 @@ if ( class_exists( 'GFForms' ) ) {
 					$list_values = maybe_unserialize( RGFormsModel::get_field_value( $field ) );  // get the value of the field
 
 					foreach ( $list_values as $row ) {
-						$result = $this->get_row_formula_result( $isNumberRangeMax, $field, $row );
+						$result = $this->get_row_formula_result( $isNumberRangeMax, $form, $field, $row );
 
 						if ( $result && $value > $result ) {
 
@@ -737,7 +715,7 @@ if ( class_exists( 'GFForms' ) ) {
 
 		} // END is_valid_number
 
-		function get_row_formula_result( $formula, $field, $row ) {
+		function get_row_formula_result( $formula, $form, $field, $row ) {
 			// replace multiple spaces and new lines with single space
 			$formula = trim( preg_replace( '/\s+/', ' ', $formula ) );
 
@@ -748,12 +726,21 @@ if ( class_exists( 'GFForms' ) ) {
 
 				foreach ( $matches as $match ) {
 					$field_id = $match[1];
-					$column_number = $match[2];
-					$column_number_key = $column_number - 1;
+					$field   = RGFormsModel::get_field( $form, $field_id );
 
-					$column_title = rgars( $field->choices, "{$column_number_key}/text" );
+					// check the field type as we only want the rest of the function to run if the field type is list
+					if ( 'list' != $field->get_input_type() ) {
+						$match_field =  $_POST['input_' . $field_id];
+					} else {
 
-					$match_value = GFCommon::to_number( $row[ $column_title ] ); //value from total column
+						$column_number = $match[2];
+						$column_number_key = $column_number - 1;
+
+						$column_title = rgars( $field->choices, "{$column_number_key}/text" );
+						$match_field =  $row[ $column_title ];
+					}
+
+					$match_value = GFCommon::to_number( $match_field ); //value from total column
 						if ( ! $match_value ) {
 							$match_value = 0;
 						}

@@ -358,12 +358,12 @@ function itsg_gf_list_numformat_init() {
 
 							// remove any unsupported options - leave only column row value options
 							// remove the standard options
-							jQuery( '#list_choice_calculation_formula_' + index + '_variable_select optgroup[label="Allowable form fields"]' ).remove();
+							//jQuery( '#list_choice_calculation_formula_' + index + '_variable_select optgroup[label="Allowable form fields"]' ).remove();
 							// remove any options created by other plugins
-							jQuery( 'li#field_' + field.id + ' #list_choice_calculation_formula_' + index + '_variable_select' ).find( 'option' ).each( function() {
-							  if ( '' !== jQuery( this ).val() && ( -1 == jQuery( this ).val().indexOf( ':' + field.id + '.' ) || -1 == jQuery( this ).text().indexOf( '(' + text_column_row_value + ')' ) ) ) {
-								 jQuery( this ).remove();
-							  }
+							jQuery( 'li#field_' + field.id + ' #list_choice_calculation_formula_' + index + '_variable_select optgroup[label="Custom"]' ).find( 'option' ).each( function() {
+								if ( '' !== jQuery( this ).val() && ( -1 == jQuery( this ).val().indexOf( ':' + field.id + '.' ) || -1 == jQuery( this ).text().indexOf( '(' + text_column_row_value + ')' ) ) ) {
+									jQuery( this ).remove();
+								}
 							});
 
 							// remove default merge tags options
