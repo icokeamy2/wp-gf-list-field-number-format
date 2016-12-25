@@ -25,7 +25,7 @@ Turn your list field columns into repeatable number fields
 * specify a range requirement - this can be a set number, e.g. 200 or a formula, e.g. column 1 + column 2
 * calculate column values uing a formula (e.g. field = column 1 + column 2)
 * compatible with <a href="https://github.com/richardW8k/RWListFieldCalculations/blob/master/RWListFieldCalculations.php">Gravity Forms List Field Calculations Add-On</a>
-* compatible with Gravity PDF
+* compatible with <a href="https://wordpress.org/plugins/gravity-forms-pdf-extended/">Gravity PDF</a>
 
 > See a demo of this plugin at [demo.itsupportguides.com/list-field-number-format-for-gravity-forms/](http://demo.itsupportguides.com/list-field-number-format-for-gravity-forms/ "demo website")
 
@@ -49,7 +49,7 @@ Please take the time to review the plugin. Your feedback is important and will h
 
 *This plugins is provided “as is” without warranty of any kind, expressed or implied. The author shall not be liable for any damages, including but not limited to, direct, indirect, special, incidental or consequential damages or losses that occur out of the use or inability to use the plugin.*
 
-*Note: When Gravity Forms isn't installed and you activate Gravity PDF we display a notice that includes an affiliate link to their website.*
+*Note: When Gravity Forms isn't installed and you activate this plugin we display a notice that includes an affiliate link to their website.*
 
 == Installation ==
 
