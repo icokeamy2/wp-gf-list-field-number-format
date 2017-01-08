@@ -2,7 +2,7 @@
 /*
 Plugin Name: List Field Number Format for Gravity Forms
 Description: Turn your list field columns into repeatable number fields
-Version: 1.3.0
+Version: 1.3.1
 Author: Adrian Gordon
 Author URI: http://www.itsupportguides.com
 License: GPL2
@@ -64,7 +64,7 @@ if ( class_exists( 'GFForms' ) ) {
 
     class ITSG_GF_ListField_Number_Format extends GFAddOn {
 
-        protected $_version = '1.3.0';
+        protected $_version = '1.3.1';
         protected $_min_gravityforms_version = '1.9.15';
         protected $_slug = 'list-field-number-format-for-gravity-forms';
         protected $_full_path = __FILE__;
@@ -678,7 +678,7 @@ if ( class_exists( 'GFForms' ) ) {
 		} // END get_formatted_value
 
 		// check is value provided is value, compared to number format and min/max range - used in validation
-		function is_valid_number( $value, $number_format, $isNumberRangeMin, $isNumberRangeMax, $field ) {
+		function is_valid_number( $value, $number_format, $isNumberRangeMin, $isNumberRangeMax, $field, $form ) {
 			$is_valid_number= array(); // we'll be returning the result along with evaluated range details as an array
 			$is_valid_number['result'] = true;
 			$is_valid_number['result_min'] = null;

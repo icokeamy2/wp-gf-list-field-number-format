@@ -4,7 +4,7 @@ Donate link: http://www.itsupportguides.com/
 Tags: Gravity Forms, forms, online forms, select, list, numbers, math
 Requires at least: 4.5.3
 Tested up to: 4.7.0
-Stable tag: 1.3.0
+Stable tag: 1.3.1
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -65,6 +65,9 @@ Please take the time to review the plugin. Your feedback is important and will h
 1. Shows the number format options in the forms editor.
 
 == Changelog ==
+
+= 1.3.1 =
+* Fix: resolve 'undefined variable' error on submitting form.
 
 = 1.3.0 =
 * Fix: resolve issue with total column repeating if there are multiple total columns in a list field
