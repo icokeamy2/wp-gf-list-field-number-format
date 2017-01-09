@@ -2,7 +2,7 @@
 /*
 Plugin Name: List Field Number Format for Gravity Forms
 Description: Turn your list field columns into repeatable number fields
-Version: 1.3.1
+Version: 1.3.2
 Author: Adrian Gordon
 Author URI: http://www.itsupportguides.com
 License: GPL2
@@ -64,7 +64,7 @@ if ( class_exists( 'GFForms' ) ) {
 
     class ITSG_GF_ListField_Number_Format extends GFAddOn {
 
-        protected $_version = '1.3.1';
+        protected $_version = '1.3.2';
         protected $_min_gravityforms_version = '1.9.15';
         protected $_slug = 'list-field-number-format-for-gravity-forms';
         protected $_full_path = __FILE__;
@@ -639,7 +639,7 @@ if ( class_exists( 'GFForms' ) ) {
 
 										$result = $this->get_row_formula_result( $isNumberCalculationFormula, $form, $field, $row ); // evaluate formula and return result
 
-										$row[ $column ] = $this->get_formatted_value( $result, $isNumberFormat, $isNumberRounding, isNumberFixedPoint ); // store result in the row value
+										$row[ $column ] = $this->get_formatted_value( $result, $isNumberFormat, $isNumberRounding, $isNumberFixedPoint ); // store result in the row value
 									}
 									array_push( $submit_value, $row[ $column ] ); // add row to submit value array
 								}
@@ -679,7 +679,7 @@ if ( class_exists( 'GFForms' ) ) {
 
 		// check is value provided is value, compared to number format and min/max range - used in validation
 		function is_valid_number( $value, $number_format, $isNumberRangeMin, $isNumberRangeMax, $field, $form ) {
-			$is_valid_number= array(); // we'll be returning the result along with evaluated range details as an array
+			$is_valid_number = array(); // we'll be returning the result along with evaluated range details as an array
 			$is_valid_number['result'] = true;
 			$is_valid_number['result_min'] = null;
 			$is_valid_number['result_max'] = null;
@@ -691,7 +691,7 @@ if ( class_exists( 'GFForms' ) ) {
 
 			$value = GFCommon::maybe_add_leading_zero( $value );
 
-			if ( ! GFCommon::is_numeric( $value, $number_format ) ) {
+			if ( ! GFCommon::is_numeric( $value ) ) {
 
 				$is_valid_number['result'] = false;
 				return $is_valid_number;
@@ -812,7 +812,7 @@ if ( class_exists( 'GFForms' ) ) {
 			} elseif ( is_numeric( $isNumberRangeMax ) ) {
 				$message = sprintf( esc_html__( "Requires a value less than or equal to %s.", 'list-field-number-format-for-gravity-forms' ), "<strong>{$this->get_formatted_value( $isNumberRangeMax, $isNumberFormat, $isNumberRounding, $isNumberFixedPoint )}</strong>" );
 			} else {
-				$message = esc_html__( 'Check number is valid.', 'list-field-number-format-for-gravity-forms' );
+				$message = esc_html__( 'Requires a valid number.', 'list-field-number-format-for-gravity-forms' );
 			}
 
 			return $message;
@@ -829,7 +829,7 @@ if ( class_exists( 'GFForms' ) ) {
 			} elseif ( is_numeric( $isNumberRangeMax ) ) {
 				$message = sprintf( esc_html__( "The column '%s' requires a value less than or equal to %s.", 'list-field-number-format-for-gravity-forms' ), $column_title, "<strong>{$this->get_formatted_value( $isNumberRangeMax, $isNumberFormat, $isNumberRounding, $isNumberFixedPoint )}</strong>" );
 			} else {
-				$message = esc_html__( "Check number is valid.", 'list-field-number-format-for-gravity-forms' );
+				$message = sprintf( esc_html__( "The column '%s' requires is valid number.", 'list-field-number-format-for-gravity-forms' ), $column_title );
 			}
 
 			return $message;

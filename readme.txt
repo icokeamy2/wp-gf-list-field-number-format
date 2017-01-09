@@ -4,7 +4,7 @@ Donate link: http://www.itsupportguides.com/
 Tags: Gravity Forms, forms, online forms, select, list, numbers, math
 Requires at least: 4.5.3
 Tested up to: 4.7.0
-Stable tag: 1.3.1
+Stable tag: 1.3.2
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -66,6 +66,9 @@ Please take the time to review the plugin. Your feedback is important and will h
 
 == Changelog ==
 
+= 1.3.2 =
+* Maintenance: improve validation for French notation numbers (9.999,99)
+
 = 1.3.1 =
 * Fix: resolve 'undefined variable' error on submitting form.
 
@@ -91,7 +94,7 @@ Please take the time to review the plugin. Your feedback is important and will h
 * Fix: Change how field id is determined to improve compatibility with all versions of Gravity Forms.
 
 = 1.1.4 =
-* Fix: Resolve issue with row calculations based on french notation numbers (9.999,99).
+* Fix: Resolve issue with row calculations based on French notation numbers (9.999,99).
 * Fix: Resolve issue field format not correctly setting when new row is added.
 
 = 1.1.3 =
