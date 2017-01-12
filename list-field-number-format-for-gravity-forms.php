@@ -395,7 +395,7 @@ if ( class_exists( 'GFForms' ) ) {
 
 							$readonly = rgar( $choice, 'isNumberEnableCalculation' ) && '' !== rgar( $choice, 'isNumberCalculationFormula' ) ? "readonly='readonly'" : '';
 
-							$input = str_replace( "<input ", "<input {$readonly} class='{$classes}' ", $input );
+							$input = str_replace( "<input type='text' ", "<input type='number' {$readonly} class='{$classes}' ", $input );
 
 							$isNumberRangeMin = rgar( $choice, 'isNumberRangeMin' );
 							$isNumberRangeMax = rgar( $choice, 'isNumberRangeMax' );
@@ -415,7 +415,7 @@ if ( class_exists( 'GFForms' ) ) {
 
 						$readonly = $field->isNumberEnableCalculation && '' !== $field->isNumberCalculationFormula ? "readonly='readonly'" : '';
 
-						$input = str_replace( "<input ", "<input class='{$classes}' ", $input );
+						$input = str_replace( "<input type='text' ", "<input type='number' class='{$classes}' ", $input );
 
 						$isNumberRangeMin = $field->isNumberRangeMin;
 						$isNumberRangeMax = $field->isNumberRangeMax;
