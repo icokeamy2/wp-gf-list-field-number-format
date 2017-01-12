@@ -1,12 +1,11 @@
 <?php
 /*
-Plugin Name: List Field Number Format for Gravity Forms
+Plugin Name: List Field Number Input for Gravity Forms
 Description: Turn your list field columns into repeatable number fields
-Version: 1.3.3
-Author: Adrian Gordon
-Author URI: http://www.itsupportguides.com
+Version: 1.3.3a
+Author: Adrian Gordon, Karsten Goossens
 License: GPL2
-Text Domain: list-field-number-format-for-gravity-forms
+Text Domain: list-field-number-input-for-gravity-forms
 
 ------------------------------------------------------------------------
 Copyright 2016 Adrian Gordon
@@ -64,12 +63,12 @@ if ( class_exists( 'GFForms' ) ) {
 
     class ITSG_GF_ListField_Number_Format extends GFAddOn {
 
-        protected $_version = '1.3.3';
+        protected $_version = '1.3.3a';
         protected $_min_gravityforms_version = '1.9.15';
-        protected $_slug = 'list-field-number-format-for-gravity-forms';
+        protected $_slug = 'list-field-number-input-for-gravity-forms';
         protected $_full_path = __FILE__;
-        protected $_title = 'List Field Number Format for Gravity Forms';
-        protected $_short_title = 'List Field Number Format';
+        protected $_title = 'List Field Number Input for Gravity Forms';
+        protected $_short_title = 'List Field Number Input';
 
         public function init() {
 			parent::init();
