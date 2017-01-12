@@ -2,7 +2,7 @@
 /*
 Plugin Name: List Field Number Format for Gravity Forms
 Description: Turn your list field columns into repeatable number fields
-Version: 1.3.2
+Version: 1.3.3
 Author: Adrian Gordon
 Author URI: http://www.itsupportguides.com
 License: GPL2
@@ -64,7 +64,7 @@ if ( class_exists( 'GFForms' ) ) {
 
     class ITSG_GF_ListField_Number_Format extends GFAddOn {
 
-        protected $_version = '1.3.2';
+        protected $_version = '1.3.3';
         protected $_min_gravityforms_version = '1.9.15';
         protected $_slug = 'list-field-number-format-for-gravity-forms';
         protected $_full_path = __FILE__;
@@ -174,10 +174,10 @@ if ( class_exists( 'GFForms' ) ) {
 									$isNumberRoundingDirection = strlen( rgar( $choice, 'isNumberRoundingDirection' ) ) > 0 ? rgar( $choice, 'isNumberRoundingDirection' ) : 'roundclosest';
 									$number_format_fields[ $field_id ][ $column_number ]['isNumberRoundingDirection'] = $isNumberRoundingDirection;
 
-									$isNumberFixedPoint = true == rgar( $choice, 'isNumberFixedPoint' ) ? $field->isNumberFixedPoint : 'false';
+									$isNumberFixedPoint = rgar( $choice, 'isNumberFixedPoint' ) ? $field->isNumberFixedPoint : 'false';
 									$number_format_fields[ $field_id ][ $column_number ]['isNumberFixedPoint'] = rgar( $choice, 'isNumberFixedPoint' );
 
-									$isNumberColumnTotal = true == rgar( $choice, 'isNumberColumnTotal' ) ? 'true' : 'false';
+									$isNumberColumnTotal = rgar( $choice, 'isNumberColumnTotal' ) ? 'true' : 'false';
 									$number_format_fields[ $field_id ][ $column_number ]['isNumberColumnTotal'] = $isNumberColumnTotal;
 
 									if ( ''  !== rgar( $choice, 'isNumberCalculationFormula' ) ) {
@@ -193,7 +193,7 @@ if ( class_exists( 'GFForms' ) ) {
 									}
 								}
 							}
-						} elseif ( true == $field->isNumber ) {
+						} elseif ( $field->isNumber ) {
 							$column_number = 1;
 
 							$isNumberFormat = strlen( $default_isNumberFormat ) > 0 ? $default_isNumberFormat : $field->isNumberFormat;
@@ -205,10 +205,10 @@ if ( class_exists( 'GFForms' ) ) {
 							$isNumberRoundingDirection = strlen( $field->isNumberRoundingDirection ) > 0 ? $field->isNumberRoundingDirection : 'roundclosest';
 							$number_format_fields[ $field_id ][ $column_number ]['isNumberRoundingDirection'] = $isNumberRoundingDirection;
 
-							$isNumberFixedPoint = true == $field->isNumberFixedPoint > 0 ? $field->isNumberFixedPoint : 'false';
+							$isNumberFixedPoint = $field->isNumberFixedPoint > 0 ? $field->isNumberFixedPoint : 'false';
 							$number_format_fields[ $field_id ][ $column_number ]['isNumberFixedPoint'] = $isNumberFixedPoint;
 
-							$isNumberColumnTotal = true == $field->isNumberColumnTotal ? 'true' : 'false';
+							$isNumberColumnTotal = $field->isNumberColumnTotal ? 'true' : 'false';
 							$number_format_fields[ $field_id ][ $column_number ]['isNumberColumnTotal'] = $isNumberColumnTotal;
 						}
 					}
@@ -365,7 +365,7 @@ if ( class_exists( 'GFForms' ) ) {
 				$has_columns = is_array( $field['choices'] );
 				if ( $has_columns ) {
 					foreach( $field['choices'] as $choice ) {
-						if ( $text == rgar( $choice, 'text' ) && true == rgar( $choice, 'isNumber' ) ) {
+						if ( $text == rgar( $choice, 'text' ) && rgar( $choice, 'isNumber' ) ) {
 							$isNumberFormat = rgar( $choice, 'isNumberFormat' );
 							$isNumberRounding = rgar( $choice, 'isNumberRounding' );
 							$isNumberFixedPoint = rgar( $choice, 'isNumberFixedPoint' );
@@ -374,7 +374,7 @@ if ( class_exists( 'GFForms' ) ) {
 						}
 					}
 				} else {
-					if ( true == $field->isNumber ) {
+					if ( $field->isNumber ) {
 						$isNumberFormat = $field->isNumberFormat;
 						$isNumberRounding = $field->isNumberRounding;
 						$isNumberFixedPoint = $field->isNumberFixedPoint;
@@ -388,12 +388,12 @@ if ( class_exists( 'GFForms' ) ) {
 				if ( $has_columns ) {
 					$number_of_columns = sizeof( $field['choices'] );
 					foreach( $field['choices'] as $choice ) {
-						if ( $text == rgar( $choice, 'text' )  && true == rgar( $choice, 'isNumber' ) ) {
+						if ( $text == rgar( $choice, 'text' )  && rgar( $choice, 'isNumber' ) ) {
 							// add class to input
-							$classes = rgar( $choice, 'isNumberFormat' );
-							$classes .= true == rgar( $choice, 'isNumberColumnTotal' ) ? ' isNumberColumnTotal' : '';
+							$classes = empty( rgar( $choice, 'isNumberFormat' ) ) ? 'decimal_dot' : rgar( $choice, 'isNumberFormat' );
+							$classes .= rgar( $choice, 'isNumberColumnTotal' ) ? ' isNumberColumnTotal' : '';
 
-							$readonly = true == rgar( $choice, 'isNumberEnableCalculation' ) && '' !== rgar( $choice, 'isNumberCalculationFormula' ) ? "readonly='readonly'" : '';
+							$readonly = rgar( $choice, 'isNumberEnableCalculation' ) && '' !== rgar( $choice, 'isNumberCalculationFormula' ) ? "readonly='readonly'" : '';
 
 							$input = str_replace( "<input ", "<input {$readonly} class='{$classes}' ", $input );
 
@@ -408,12 +408,12 @@ if ( class_exists( 'GFForms' ) ) {
 						}
 					}
 				} else {
-					if ( true == $field->isNumber ) {
+					if ( $field->isNumber ) {
 						// add class to input
-						$classes = $field->isNumberFormat;
-						$classes .= true == $field->isNumberColumnTotal ? ' isNumberColumnTotal' : '';
+						$classes = empty( $field->isNumberFormat ) ? 'decimal_dot' : $field->isNumberFormat;
+						$classes .= $field->isNumberColumnTotal ? ' isNumberColumnTotal' : '';
 
-						$readonly = true == $field->isNumberEnableCalculation && '' !== $field->isNumberCalculationFormula ? "readonly='readonly'" : '';
+						$readonly = $field->isNumberEnableCalculation && '' !== $field->isNumberCalculationFormula ? "readonly='readonly'" : '';
 
 						$input = str_replace( "<input ", "<input class='{$classes}' ", $input );
 
@@ -446,51 +446,47 @@ if ( class_exists( 'GFForms' ) ) {
 					$has_columns = is_array( $field['choices'] );
 					if ( $has_columns ) {
 						$number_of_columns = sizeof( $field['choices'] );
-						$column_number = 0;
-						$value = rgpost( "input_{$field['id']}" );
-						if ( is_array( $value ) ) {
-							foreach( $value as $column_value ) {
-								$choice = $field['choices'][ $column_number ];
-								if ( rgar( $choice, 'isNumber' ) )  {
-									$value = $column_value;
-									$isNumberFormat = rgar( $choice, 'isNumberFormat' );
-									$isNumberRounding = rgar( $choice, 'isNumberRounding' );
-									$isNumberFixedPoint = rgar( $choice, 'isNumberFixedPoint' );
-									$isNumberRangeMin = rgar( $choice, 'isNumberRangeMin' );
-									$isNumberRangeMax = rgar( $choice, 'isNumberRangeMax' );
-									if ( ! empty( $value ) ) {
+						$list_values = maybe_unserialize( RGFormsModel::get_field_value( $field ) );  // get the value of the field);
+						if ( is_array( $list_values ) ) {
+							foreach ( $list_values as $row ) { // get each row
+								foreach ( $field->choices as $key => &$choice ) { // for each column
+									$column = rgars( $field->choices, "{$key}/text" ); // we'll be using the column label as the key
+									if ( rgar( $choice, 'isNumber' ) )  {
+										$value = $row[ $column ];
+										$isNumberFormat = rgar( $choice, 'isNumberFormat' );
+										$isNumberRounding = rgar( $choice, 'isNumberRounding' );
+										$isNumberFixedPoint = rgar( $choice, 'isNumberFixedPoint' );
+										$isNumberRangeMin = rgar( $choice, 'isNumberRangeMin' );
+										$isNumberRangeMax = rgar( $choice, 'isNumberRangeMax' );
+										if ( ! empty( $value ) ) {
 
-										// check number is in correct format
-										if ( ! $this->is_column_value_valid_format( $value, $isNumberFormat ) ) {
-											$validation_result['is_valid'] = false; // set the form validation to false
-											$field->failed_validation = true;
+											// check number is in correct format
+											if ( ! $this->is_column_value_valid_format( $value, $isNumberFormat ) ) {
+												$validation_result['is_valid'] = false; // set the form validation to false
+												$field->failed_validation = true;
 
-											$number_format_text = $this->get_formatted_value( '9999', $isNumberFormat, $isNumberRounding, $isNumberFixedPoint );
+												$number_format_text = $this->get_formatted_value( '9999', $isNumberFormat, $isNumberRounding, $isNumberFixedPoint );
 
-											$message = sprintf( esc_html__( "The column '%s' requires a value in %s format.", 'list-field-number-format-for-gravity-forms' ), $choice['text'], $number_format_text );
-											$field->validation_message = $message;
-											break;
-										}
+												$message = sprintf( esc_html__( "The column '%s' requires a value in %s format.", 'list-field-number-format-for-gravity-forms' ), $choice['text'], $number_format_text );
+												$field->validation_message = $message;
+												break;
+											}
 
-										$is_valid_number = $this->is_valid_number( $value, $isNumberFormat, $isNumberRangeMin, $isNumberRangeMax, $field, $form );
+											$is_valid_number = $this->is_valid_number( $value, $isNumberFormat, $isNumberRangeMin, $isNumberRangeMax, $form, $field, $row );
 
-										// check number is in correct range
-										if ( ! $is_valid_number['result'] ) {
-											$validation_result['is_valid'] = false; // set the form validation to false
-											$field->failed_validation = true;
-											$message = $this->get_column_validation_range_message( $choice['text'], $is_valid_number['result_min'], $is_valid_number['result_max'], $isNumberFormat, $isNumberRounding, $isNumberFixedPoint );
-											$field->validation_message = $message;
+											// check number is in correct range
+											if ( ! $is_valid_number['result'] ) {
+												$validation_result['is_valid'] = false; // set the form validation to false
+												$field->failed_validation = true;
+												$message = $this->get_column_validation_range_message( $choice['text'], $is_valid_number['result_min'], $is_valid_number['result_max'], $isNumberFormat, $isNumberRounding, $isNumberFixedPoint );
+												$field->validation_message = $message;
+											}
 										}
 									}
 								}
-								if ( $column_number >= ( $number_of_columns - 1 ) ) {
-									$column_number = 0; // reset column number
-								} else {
-									$column_number = $column_number + 1; // increment column number
-								}
 							}
 						}
-					} elseif ( true == $field->isNumber ) {
+					} elseif ( $field->isNumber ) {
 						$value = rgpost( "input_{$field['id']}" );
 						if ( is_array( $value ) ) {
 							foreach( $value as $key => $column_value ) {
@@ -513,7 +509,7 @@ if ( class_exists( 'GFForms' ) ) {
 										break;
 									}
 
-									$is_valid_number = $this->is_valid_number( $value, $isNumberFormat, $isNumberRangeMin, $isNumberRangeMax, $field, $form );
+									$is_valid_number = $this->is_valid_number( $value, $isNumberFormat, $isNumberRangeMin, $isNumberRangeMax, $form, $field, $row );
 
 									// check number is in correct range
 									if ( ! $is_valid_number['result'] ) {
@@ -585,10 +581,9 @@ if ( class_exists( 'GFForms' ) ) {
 											$column_total[ $column_number ] = 0;
 										}
 
-										if ( true  == rgar( $field['choices'][ $column_number ], 'isNumberColumnTotal' ) ) {
+										if ( rgar( $field['choices'][ $column_number ], 'isNumberColumnTotal' ) ) {
 											$number_format = rgar( $field['choices'][ $column_number ], 'isNumberFormat' );
 											$column_total[ $column_number ] += $this->get_clean_value( $column, $number_format );
-
 										}
 
 										if ( $column_number >= ( $number_of_columns - 1 ) ) {
@@ -597,16 +592,36 @@ if ( class_exists( 'GFForms' ) ) {
 											$column_number = $column_number + 1; // increment column number
 										}
 									}
+								} else {
+									if ( ! isset ( $column_total ) ) {
+										$column_total = 0;
+									}
+
+									if ( $field->isNumberColumnTotal ) {
+										$number_format = $field->isNumberFormat;
+										$column_total += $this->get_clean_value( $val, $number_format );
+									}
 								}
 							}
-							foreach ( $column_total as $key => $total ) {
-								if ( true  == rgar( $field['choices'][ $key ], 'isNumberColumnTotal' ) ) {
-									$isNumberFormat = rgar( $field['choices'][ $key ], 'isNumberFormat' );
-									$isNumberRounding = rgar( $field['choices'][ $key ], 'isNumberRounding' );
-									$isNumberFixedPoint = rgar( $field['choices'][ $key ], 'isNumberFixedPoint' );
-									$number_format_text = $this->get_formatted_value( $total, $isNumberFormat, $isNumberRounding, $isNumberFixedPoint );
-									$column_label = rgars( $field->choices, "{$key}/text" ); // we'll be using the column label as the key
-									$total_row[ $column_label ] = "<div style='border-top: medium double; border-bottom: 1px solid;'><strong>{$number_format_text}</strong></div>";
+
+							if ( $has_columns ) {
+								foreach ( $column_total as $key => $total ) {
+									if ( rgar( $field['choices'][ $key ], 'isNumberColumnTotal' ) ) {
+										$isNumberFormat = rgar( $field['choices'][ $key ], 'isNumberFormat' );
+										$isNumberRounding = rgar( $field['choices'][ $key ], 'isNumberRounding' );
+										$isNumberFixedPoint = rgar( $field['choices'][ $key ], 'isNumberFixedPoint' );
+										$number_format_text = $this->get_formatted_value( $total, $isNumberFormat, $isNumberRounding, $isNumberFixedPoint );
+										$column_label = rgars( $field->choices, "{$key}/text" ); // we'll be using the column label as the key
+										$total_row[ $column_label ] = "<div style='border-top: medium double; border-bottom: 1px solid;'><strong>{$number_format_text}</strong></div>";
+									}
+								}
+							} else {
+								if ( $field->isNumberColumnTotal ) {
+									$isNumberFormat = $field->isNumberFormat;
+									$isNumberRounding = $field->isNumberRounding;
+									$isNumberFixedPoint = $field->isNumberFixedPoint;
+									$number_format_text = $this->get_formatted_value( $column_total, $isNumberFormat, $isNumberRounding, $isNumberFixedPoint );
+									$total_row = "<div style='border-top: medium double; border-bottom: 1px solid;'><strong>{$number_format_text}</strong></div>";
 								}
 							}
 							array_push( $values, $total_row ); // add row to submit value array
@@ -678,7 +693,7 @@ if ( class_exists( 'GFForms' ) ) {
 		} // END get_formatted_value
 
 		// check is value provided is value, compared to number format and min/max range - used in validation
-		function is_valid_number( $value, $number_format, $isNumberRangeMin, $isNumberRangeMax, $field, $form ) {
+		function is_valid_number( $value, $number_format, $isNumberRangeMin, $isNumberRangeMax, $form, $field, $row ) {
 			$is_valid_number = array(); // we'll be returning the result along with evaluated range details as an array
 			$is_valid_number['result'] = true;
 			$is_valid_number['result_min'] = null;
@@ -691,8 +706,7 @@ if ( class_exists( 'GFForms' ) ) {
 
 			$value = GFCommon::maybe_add_leading_zero( $value );
 
-			if ( ! GFCommon::is_numeric( $value ) ) {
-
+			if ( ! GFCommon::is_numeric( $value, 'decimal_dot' ) ) { // note: this is the clean value - which is always decimal_dot
 				$is_valid_number['result'] = false;
 				return $is_valid_number;
 			}
@@ -707,34 +721,27 @@ if ( class_exists( 'GFForms' ) ) {
 
 			} else {
 				if ( ! is_null( $isNumberRangeMin ) && '' !== $isNumberRangeMin ) {
-					$list_values = maybe_unserialize( RGFormsModel::get_field_value( $field ) );  // get the value of the field
 
-					foreach ( $list_values as $row ) {
 						$result = $this->get_row_formula_result( $isNumberRangeMin, $form, $field, $row );
 
-						if ( $result && $value < $result ) {
+						if ( GFCommon::is_numeric( $result, 'decimal_dot' ) && $value < $result ) {
 
 							$is_valid_number['result'] = false;
 							$is_valid_number['result_min'] = $result;
 
 						}
-					}
 				}
 
 				if ( ! is_null( $isNumberRangeMax ) && '' !== $isNumberRangeMax ) {
-					$list_values = maybe_unserialize( RGFormsModel::get_field_value( $field ) );  // get the value of the field
 
-					foreach ( $list_values as $row ) {
 						$result = $this->get_row_formula_result( $isNumberRangeMax, $form, $field, $row );
 
-						if ( $result && $value > $result ) {
+						if ( GFCommon::is_numeric( $result, 'decimal_dot' ) && $value > $result ) {
 
 							$is_valid_number['result'] = false;
 							$is_valid_number['result_max'] = $result;
 
 						}
-
-					}
 				}
 			}
 
@@ -829,7 +836,7 @@ if ( class_exists( 'GFForms' ) ) {
 			} elseif ( is_numeric( $isNumberRangeMax ) ) {
 				$message = sprintf( esc_html__( "The column '%s' requires a value less than or equal to %s.", 'list-field-number-format-for-gravity-forms' ), $column_title, "<strong>{$this->get_formatted_value( $isNumberRangeMax, $isNumberFormat, $isNumberRounding, $isNumberFixedPoint )}</strong>" );
 			} else {
-				$message = sprintf( esc_html__( "The column '%s' requires is valid number.", 'list-field-number-format-for-gravity-forms' ), $column_title );
+				$message = sprintf( esc_html__( "The column '%s' requires a valid number.", 'list-field-number-format-for-gravity-forms' ), $column_title );
 			}
 
 			return $message;
@@ -877,7 +884,7 @@ if ( class_exists( 'GFForms' ) ) {
 									return true;
 								}
 							}
-						} else if ( true == $field->isNumber ) {
+						} else if ( $field->isNumber ) {
 							return true;
 						}
 					}

@@ -14,6 +14,11 @@
 						$class = new GFPDF\Helper\Fields\ITSG_GF_isNumber_Field( $field, $entry, GPDFAPI::get_form_class(), GPDFAPI::get_misc_class() );
 					}
 				}
+			} else {
+				if ( $field->isNumber ) {
+					require_once( plugin_dir_path( __FILE__ ).'ITSG_GF_isNumber_Field.php' );
+					$class = new GFPDF\Helper\Fields\ITSG_GF_isNumber_Field( $field, $entry, GPDFAPI::get_form_class(), GPDFAPI::get_misc_class() );
+				}
 			}
 		}
 		return $class;
